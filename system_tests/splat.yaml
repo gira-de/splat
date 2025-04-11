@@ -1,0 +1,31 @@
+general:
+  logging:
+    level: "DEBUG"
+  git:
+    clone_dir: "/splat/splat_repos/"
+    branch_name: "splat"
+  debug:
+    skip_cleanup: True
+
+source_control:
+  platforms:
+    - type: github
+      name: GitHub.com
+      domain: "https://github.com"
+      access_token: ${SYSTEM_TEST_GITHUB_ACCESS_TOKEN}
+      filters:
+        exclude: []
+        include: [gira-de/splat-system-test]
+
+    - type: gitlab
+      name: GitLab.com
+      domain: "https://gitlab.com"
+      access_token: ${SYSTEM_TEST_GITLAB_ACCESS_TOKEN}
+      filters:
+        exclude: []
+        include: [gira-de/splat-system-test-gitlab]
+
+notifications:
+  sinks:
+    - type: teams
+      webhook_url: ${BOT_TEST_TEAMS_WEBHOOK_URL_GENERAL}

@@ -1,0 +1,44 @@
+name: System Tests
+description: Runs system tests against a Docker image
+inputs:
+  image_version:
+    description: "Docker image name and tag to test"
+    required: true
+  system_test_github_access_token:
+    description: "GitHub ccess token for gira-de/splat-system-test"
+    required: true
+  system_test_gitlab_access_token:
+    description: "GitLab access token for gira-de/splat-system-test-gitlab"
+    required: true
+  bot_test_teams_webhook_url_general:
+    description: "Test Bot Teams webhook URL for notifications"
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+    - run: chmod a+rw system_tests/splat.yaml
+      shell: bash
+
+    - name: Pull image
+      run: docker pull "${{ inputs.image_version }}"
+      shell: bash
+
+    - name: Build tests image
+      run: |
+        docker build \
+          --build-arg BASE_IMAGE="${{ inputs.image_version }}" \
+          -t system_tests_image \
+          -f system_tests/Dockerfile .
+      shell: bash
+
+    - name: Run tests
+      run: |
+        docker run --rm \
+          -e SYSTEM_TEST_GITLAB_ACCESS_TOKEN="${{ inputs.system_test_gitlab_access_token }}" \
+          -e SYSTEM_TEST_GITHUB_ACCESS_TOKEN="${{ inputs.system_test_github_access_token }}" \
+          -e BOT_TEST_TEAMS_WEBHOOK_URL_GENERAL="${{ inputs.bot_test_teams_webhook_url_general }}" \
+          system_tests_image
+      shell: bash

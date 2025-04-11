@@ -1,0 +1,48 @@
+[
+    [
+        {
+            "type": "TextBlock",
+            "text": "group/example-project",
+            "weight": "bolder",
+            "size": "extraLarge"
+        },
+        {
+            "type": "TextBlock",
+            "text": "Merge Request Creation or Update on github Failed",
+            "weight": "bolder",
+            "size": "large",
+            "color": "Attention"
+        },
+        {
+            "type": "TextBlock",
+            "text": "in [group/example-project](http://example.com/project)",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "An error occurred during: Merge Request Creation or Update on github",
+            "wrap": true
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.ToggleVisibility",
+                    "title": "Error Details: An error occurred during the process.",
+                    "targetElements": [
+                        {
+                            "elementId": "details_0"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "id": "details_0",
+            "isVisible": false,
+            "text": "No additional details",
+            "wrap": true
+        }
+    ]
+]

@@ -1,0 +1,48 @@
+{
+    "fixes": [
+        {
+            "name": "package1",
+            "old_version": "1.0.0",
+            "new_version": "2.0.0"
+        },
+        {
+            "name": "package2",
+            "old_version": "1.0.0",
+            "new_version": "1.5.0"
+        }
+    ],
+    "dependencies": [
+        {
+            "name": "package1",
+            "version": "1.0.0",
+            "vulns": [
+                {
+                    "id": "VULN-1",
+                    "description": "Test vulnerability",
+                    "fix_versions": [
+                        "2.0.0"
+                    ],
+                    "aliases": [
+                        "CVE-1234"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "package2",
+            "version": "1.0.0",
+            "vulns": [
+                {
+                    "id": "VULN-2",
+                    "description": "Another test vulnerability",
+                    "fix_versions": [
+                        "1.5.0"
+                    ],
+                    "aliases": [
+                        "CVE-5678"
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "matangover.mypy",
+        "vivaxy.vscode-conventional-commits",
+        "shardulm94.trailing-spaces",
+        "ms-azuretools.vscode-docker",
+        "charliermarsh.ruff"
+    ]
+}

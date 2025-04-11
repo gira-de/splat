@@ -1,0 +1,45 @@
+[
+    {
+        "type": "auditAdvisory",
+        "data": {
+            "resolution": {
+                "id": 2,
+                "path": "package2",
+                "dev": false
+            },
+            "advisory": {
+                "findings": [
+                    {
+                        "version": "1.0.0",
+                        "paths": [
+                            "package2"
+                        ]
+                    }
+                ],
+                "vulnerable_versions": "<3.0.0",
+                "patched_versions": ">=3.0.0",
+                "module_name": "package2",
+                "severity": "high",
+                "github_advisory_id": "2",
+                "overview": "Some vulnerability description here",
+                "recommendation": "Upgrade to version 3.0.0 or later",
+                "cves": [
+                    "CVE-1"
+                ],
+                "title": "Vulnerability Title"
+            }
+        }
+    },
+    {
+        "type": "auditSummary",
+        "data": {
+            "vulnerabilities": {
+                "info": 0,
+                "low": 0,
+                "moderate": 0,
+                "high": 1,
+                "critical": 0
+            }
+        }
+    }
+]

@@ -1,0 +1,48 @@
+[
+    {
+        "package": {
+            "key": "package1",
+            "package_name": "package1",
+            "installed_version": "1.0.0"
+        },
+        "dependencies": [
+            {
+                "key": "package3",
+                "package_name": "package_3",
+                "installed_version": "1.0.0",
+                "required_version": ">=2.0"
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "package2",
+            "package_name": "package2",
+            "installed_version": "1.0.0"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "package3",
+            "package_name": "package3",
+            "installed_version": "1.0.0"
+        },
+        "dependencies": []
+    },
+    {
+        "package": {
+            "key": "package4",
+            "package_name": "package4",
+            "installed_version": "3.0.0"
+        },
+        "dependencies": [
+            {
+                "key": "package3",
+                "package_name": "package3",
+                "installed_version": "1.0.0",
+                "required_version": ">=2.0"
+            }
+        ]
+    }
+]

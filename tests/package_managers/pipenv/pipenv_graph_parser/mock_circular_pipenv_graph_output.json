@@ -1,0 +1,38 @@
+[
+    {
+        "package": {
+            "key": "packageA",
+            "installed_version": "1.0.0"
+        },
+        "dependencies": [
+            {
+                "key": "packageB",
+                "installed_version": "1.0.0"
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "packageB",
+            "installed_version": "1.0.0"
+        },
+        "dependencies": [
+            {
+                "key": "packageC",
+                "installed_version": "1.0.0"
+            }
+        ]
+    },
+    {
+        "package": {
+            "key": "packageC",
+            "installed_version": "1.0.0"
+        },
+        "dependencies": [
+            {
+                "key": "packageA",
+                "installed_version": "1.0.0"
+            }
+        ]
+    }
+]

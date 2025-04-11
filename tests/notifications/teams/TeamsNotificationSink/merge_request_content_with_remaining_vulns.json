@@ -1,0 +1,61 @@
+[
+    [
+        {
+            "type": "TextBlock",
+            "text": "example-project",
+            "weight": "bolder",
+            "size": "extraLarge"
+        },
+        {
+            "type": "TextBlock",
+            "size": "large",
+            "text": "Merge Request Created: [Splat Dependency Updates](http://example.com/merge_requests/1)"
+        },
+        {
+            "type": "TextBlock",
+            "text": "in [example-project](http://example.com/project)"
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.ToggleVisibility",
+                    "title": "\f fix: Security: Update Package A to 1.0.0",
+                    "targetElements": [
+                        {
+                            "elementId": "details_0"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "id": "details_0",
+            "isVisible": false,
+            "text": "No additional details",
+            "wrap": true
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.ToggleVisibility",
+                    "title": "\f fix: Security: Update Package B to 2.0.0",
+                    "targetElements": [
+                        {
+                            "elementId": "details_1"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "id": "details_1",
+            "isVisible": false,
+            "text": "No additional details",
+            "wrap": true
+        }
+    ]
+]

@@ -1,0 +1,94 @@
+[
+    [
+        {
+            "type": "TextBlock",
+            "text": "example-project",
+            "weight": "bolder",
+            "size": "extraLarge"
+        },
+        {
+            "type": "TextBlock",
+            "size": "large",
+            "text": "Merge Request Created: [Splat Dependency Updates](http://example.com/merge_requests/1)"
+        },
+        {
+            "type": "TextBlock",
+            "text": "in [example-project](http://example.com/project)"
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.ToggleVisibility",
+                    "title": "\f fix: Security: Update Package A to 1.0.0",
+                    "targetElements": [
+                        {
+                            "elementId": "details_0"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "id": "details_0",
+            "isVisible": false,
+            "text": "No additional details",
+            "wrap": true
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.ToggleVisibility",
+                    "title": "\f fix: Security: Update Package B to 2.0.0",
+                    "targetElements": [
+                        {
+                            "elementId": "details_1"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "id": "details_1",
+            "isVisible": false,
+            "text": "No additional details",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "Remaining Vulnerable Dependencies:",
+            "weight": "bolder",
+            "size": "large",
+            "color": "Attention"
+        },
+        {
+            "type": "TextBlock",
+            "text": "These dependencies could not be resolved automatically and need manual intervention\n",
+            "wrap": true
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.ToggleVisibility",
+                    "title": " package1 in /example.lock",
+                    "targetElements": [
+                        {
+                            "elementId": "details_2"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "id": "details_2",
+            "isVisible": false,
+            "text": "- **Installed version**: 1.0.0\n- **Safe version**: 2.0.0\n- **Type of inclusion (Direct or Transitive)**: DIRECT\n- **Found Vulnerabilities**:\n  - **Vulnerability ID**: VULN-1\n    - **Description**: Test vulnerability\n    - **Recommendation**: 2.0.0\n    - **Aliases**: CVE-1234\n",
+            "wrap": true
+        }
+    ]
+]

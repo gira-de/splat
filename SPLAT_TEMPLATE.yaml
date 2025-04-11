@@ -1,0 +1,58 @@
+# See CONFIGURATION.md for more details.
+
+general:
+  logging:
+    level: "DEBUG"
+  git:
+    clone_dir: "/splat/splat_repos/"
+    branch_name: "splat"
+  debug:
+    skip_cleanup: False
+
+source_control:
+  platforms:
+    - type: github
+      id: github-1
+      name: GitHub.com
+      domain: "https://github.com"
+      access_token: ${GITHUB_ACCESS_TOKEN}
+      filters:
+        exclude: ["user/test.*", "user/dontcheckme.*"]
+        include: ["user/test.*"]
+
+    - type: gitlab
+      id: gitlab-1
+      domain: my.gitlab.instance
+      access_token: ${GITLAB_ACCESS_TOKEN}
+      filters:
+        exclude: []
+        include: []
+
+notifications: # Optional
+  sinks:
+    - type: teams
+      webhook_url: ${TEAMS_WEBHOOK_URL}
+      merge_request:
+        webhook_url: ${TEAMS_WEBHOOK_URL}
+      update_failure:
+        webhook_url: ${TEAMS_WEBHOOK_URL}
+      error:
+        webhook_url: ${TEAMS_WEBHOOK_URL}
+
+hooks:
+  pre_commit:
+
+
+package_managers: # Optional
+  pipenv:
+    enabled: false
+    repositories:
+  poetry:
+    enabled: false
+    repositories:
+  yarn:
+    enabled: false
+    repositories:
+  uv:
+    enabled: false
+    repositories:

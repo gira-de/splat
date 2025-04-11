@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "Splat"
+# Version should always be major.minor
+version = "1.0"
+description = ""
+authors = ["Amine Malloul <mohammedamine.malloul@gira.de>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+gitpython = "^3.1.42"
+pyfiglet = "^1.0.2"
+pydantic = "^2.6.4"
+pyyaml = "*"
+toml = "^0.10.2"
+tomlkit = "^0.13.2"
+
+[tool.poetry.group.dev.dependencies]
+bandit = "^1.7.8"
+mypy = "^1.9.0"
+types-toml = "^0.10.8.20240310"
+types-requests = "^2.32.0.20240602"
+types-pyyaml = "*"
+ruff = "^0.6.8"
+
+[tool.mypy]
+python_version = 3.12
+warn_unused_configs = true
+show_traceback = true
+raise_exceptions = true
+strict = true
+show_error_codes = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "pyfiglet"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tomlkit"
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ['E', 'F', 'I', 'N']
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
