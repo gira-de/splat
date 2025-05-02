@@ -35,7 +35,7 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV POETRY_VIRTUALENVS_CREATE=false
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y gosu \
     # prepare dependencies for asdf
     curl git wget software-properties-common gnupg2 apt-transport-https \
     # asdf-nodejs
@@ -101,3 +101,9 @@ COPY --chown=splatuser splat/utils/aggregate_summaries.py aggregate_summaries.py
 
 # Allow "splat" to be used as a python module (there is a folder /splat/splat/):
 ENV PYTHONPATH="/splat/"
+
+USER root
+COPY scripts/entrypoint.sh /splat/entrypoint.sh
+RUN chmod +x /splat/entrypoint.sh
+
+ENTRYPOINT ["/splat/entrypoint.sh"]
