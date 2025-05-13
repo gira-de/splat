@@ -27,7 +27,6 @@ ENV PIPENV_IGNORE_VIRTUALENVS=1
 
 # === poetry ===
 ENV POETRY_VERSION=2.0.1
-ENV POETRY_HOME="/splat/.poetry"
 # When calling "poetry" while running in a virtual environment,
 # use the virtual environment from the project folder instead of the active one:
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
@@ -59,45 +58,55 @@ RUN apt-get install -y \
     python3.13 python3.13-venv \
     python3-pip
 
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+RUN pip3 install --break-system-packages \
+    poetry==$POETRY_VERSION \
+    pipenv \
+    uv
+
+# === yarn ===
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg \
+    | gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian/ stable main" \
+    | tee /etc/apt/sources.list.d/yarn.list && \
     apt-get update && \
     apt-get install -y yarn
 
+# === asdf-cli ===
 RUN curl -LO https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz \
     && tar -C /usr/local/bin -xzf asdf-v0.16.7-linux-amd64.tar.gz \
     && rm asdf-v0.16.7-linux-amd64.tar.gz \
     && chmod +x /usr/local/bin/asdf
 
-WORKDIR /splat/
-RUN useradd -d /splat -u 1001 splatuser && \
-    chown -R splatuser:splatuser /splat
-USER splatuser
-
-
-ENV PATH="$POETRY_HOME/bin:$ASDF_DATA_DIR/bin:$ASDF_DATA_DIR/shims:/splat/bin/:/splat/.local/bin:$PATH"
-
-RUN asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
+# === Node.js via asdf (global) ===
+RUN mkdir -p /splat/.asdf && \
+    asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
     asdf install nodejs 20.11.0 && \
     asdf set --home nodejs 20.11.0
 
-RUN pip install --user pipx --break-system-packages && \
-    pipx install poetry==$POETRY_VERSION pipenv uv
-
-COPY --chown=splatuser:splatuser pyproject.toml poetry.lock ./
-RUN poetry self add poetry-plugin-export && \
+# === Splat deps install globally ===
+WORKDIR /splat/
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry-plugin-export==1.9.0 --break-system-packages && \
     poetry export -f requirements.txt --output requirements.txt --without-hashes && \
     pip install -r requirements.txt --break-system-packages
 
-# Allow virtual env creation for cloned projects
-ENV POETRY_VIRTUALENVS_CREATE=true
+COPY splat/ splat/
+COPY bin/splat bin/splat
+COPY splat/utils/aggregate_summaries.py aggregate_summaries.py
+RUN chmod +x bin/splat \
+    && ln -s /splat/bin/splat /usr/local/bin/splat
 
-# Don't try to symlink dependencies:
-ENV UV_LINK_MODE=copy
+RUN useradd -d /splat -u 1000 splatuser && \
+    chown -R splatuser:splatuser /splat\
+    && chmod -R a+rwX /splat
+USER splatuser
 
-COPY --chown=splatuser splat/ splat/
-COPY --chown=splatuser bin/splat bin/splat
-COPY --chown=splatuser splat/utils/aggregate_summaries.py aggregate_summaries.py
+# === runtime envs ===
+ENV PATH="/usr/local/bin:$ASDF_DATA_DIR/shims:/splat/bin/:$PATH" \
+    # Allow virtual env creation for cloned projects
+    POETRY_VIRTUALENVS_CREATE=true \
+    # Don't try to symlink dependencies:
+    UV_LINK_MODE=copy \
+    # Allow "splat" to be used as a python module (there is a folder /splat/splat/):
+    PYTHONPATH="/splat/"
 
-# Allow "splat" to be used as a python module (there is a folder /splat/splat/):
-ENV PYTHONPATH="/splat/"
