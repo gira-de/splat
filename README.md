@@ -84,11 +84,14 @@ package_managers:
 
 #### Run splat
 
+* The container’s default user is UID 1000; override with --user="$(id -u):$(id -g)" if your host UID/GID differs.
+
 ```bash
 docker run \
   --pull=always \
   -it \
-  -v <path-to-you-repository>:/home/splatuser/test-drive/ \
+  --user="$(id -u):$(id -g)" \
+  -v <path-to-you-repository>:/splat/test-drive/ \
   -v $(pwd)/splat.yaml:/splat/splat.yaml \
   girade/splat:1 \
   splat \
