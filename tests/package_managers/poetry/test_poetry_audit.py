@@ -20,7 +20,7 @@ class TestPoetryAudit(BasePackageManagerTest):
 
     def test_poetry_audit_installs_dependencies_runs_pip_audit_no_vulns(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=0, stdout=self.mock_pip_audit_out_no_vulns, stderr=""),
         )
@@ -29,12 +29,12 @@ class TestPoetryAudit(BasePackageManagerTest):
         # assert
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/poetry", args=["export", "--without-hashes", "--all-groups"]
+                cmd="/usr/local/bin/poetry", args=["export", "--without-hashes", "--all-groups"]
             )
         )
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/poetry",
+                cmd="/usr/local/bin/poetry",
                 args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             )
         )
@@ -42,7 +42,7 @@ class TestPoetryAudit(BasePackageManagerTest):
 
     def test_poetry_audit_runs_pip_audit_returns_vulns(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=0, stdout=self.mock_pip_audit_out_with_vulns, stderr=""),
         )
@@ -53,7 +53,7 @@ class TestPoetryAudit(BasePackageManagerTest):
 
     def test_poetry_audit_handles_audit_command_failure(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=2, stdout="", stderr="Audit failed"),
         )
@@ -63,7 +63,7 @@ class TestPoetryAudit(BasePackageManagerTest):
 
     def test_poetry_audit_with_re_audit_skips_install(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=0, stdout=self.mock_pip_audit_out_no_vulns, stderr=""),
         )
@@ -71,13 +71,13 @@ class TestPoetryAudit(BasePackageManagerTest):
         self.poetry_manager.audit(self.lockfile, re_audit=True)
 
         # Verify that install steps are skipped.
-        self.assertFalse(self.mock_command_runner.has_called(cmd="/splat/.local/bin/poetry", args=["install"]))
+        self.assertFalse(self.mock_command_runner.has_called(cmd="/usr/local/bin/poetry", args=["install"]))
         self.assertFalse(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/poetry", args=["add", "pip-audit", "--dev"])
+            self.mock_command_runner.has_called(cmd="/usr/local/bin/poetry", args=["add", "pip-audit", "--dev"])
         )
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/poetry",
+                cmd="/usr/local/bin/poetry",
                 args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             )
         )
