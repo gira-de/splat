@@ -8,6 +8,9 @@ SPLAT_UID=$(getent passwd splatuser | cut -d: -f3) # 1000 by default
 
 # only if host and splatuser UID missmatch
 if [ "$HOST_UID" != "$SPLAT_UID" ]; then
+  # set up a real home directory for hostuser
+  export HOME=/home/hostuser
+
   PASSWD=/tmp/passwd
   GROUP=/tmp/group
 

@@ -99,10 +99,18 @@ RUN chmod +x bin/splat \
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN useradd -d /splat -u 1000 splatuser && \
-    chown -R splatuser:splatuser /splat\
-    && chmod -R a+rwX /splat
+RUN groupadd --gid 1000 splatuser \
+    && useradd --uid 1000 --gid splatuser \
+    --home-dir /home/splatuser --create-home --shell /bin/sh splatuser
+
+RUN chown -R splatuser:splatuser /splat && \
+    chmod -R a+rwX /splat
+
+RUN mkdir -p /home/hostuser \
+    && chmod a+rwX /home/hostuser
+
 USER splatuser
+ENV HOME=/home/splatuser
 
 # === runtime envs ===
 ENV PATH="/usr/local/bin:$ASDF_DATA_DIR/shims:/splat/bin/:$PATH" \
