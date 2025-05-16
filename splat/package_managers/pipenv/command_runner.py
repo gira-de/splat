@@ -13,7 +13,7 @@ class PipenvCommandRunner:
 
     def install(self, cwd: Path) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["install", "--dev"],
             cwd=cwd,
         )
@@ -21,7 +21,7 @@ class PipenvCommandRunner:
 
     def install_pip_audit(self, cwd: Path) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["install", "pip-audit", "--dev"],
             cwd=cwd,
         )
@@ -31,7 +31,7 @@ class PipenvCommandRunner:
         """Generates requirements.txt for pipenv projects based on the package manager."""
         requirements_file_path = cwd / "requirements.txt"
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["requirements", "--dev"],
             cwd=cwd,
         )
@@ -39,7 +39,7 @@ class PipenvCommandRunner:
 
     def run_pip_freeze(self, cwd: Path) -> str:
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["run", "pip", "freeze"],
             cwd=cwd,
         )
@@ -47,7 +47,7 @@ class PipenvCommandRunner:
 
     def run_pip_audit(self, cwd: Path) -> str:
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             cwd=cwd,
             allowed_return_codes=[1],
@@ -61,7 +61,7 @@ class PipenvCommandRunner:
         args.append(f"{dep_name}=={dep_version}")
 
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=args,
             cwd=cwd,
         )
@@ -69,7 +69,7 @@ class PipenvCommandRunner:
 
     def graph(self, cwd: Path) -> str:
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["graph", "--json"],
             cwd=cwd,
         )
@@ -77,7 +77,7 @@ class PipenvCommandRunner:
 
     def update(self, cwd: Path) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["update", "--dev"],
             cwd=cwd,
         )

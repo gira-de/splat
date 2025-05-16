@@ -17,7 +17,7 @@ class TestPipenvAudit(BasePackageManagerTest):
 
     def test_pipenv_audit_installs_dependencies_runs_pip_audit_no_vulns(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=0, stdout=self.mock_pip_audit_out_no_vulns, stderr=""),
         )
@@ -25,11 +25,11 @@ class TestPipenvAudit(BasePackageManagerTest):
         result = self.pipenv_manager.audit(self.lockfile, re_audit=False)
         # assert
         self.assertTrue(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["requirements", "--dev"])
+            self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["requirements", "--dev"])
         )
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/pipenv",
+                cmd="/usr/local/bin/pipenv",
                 args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             )
         )
@@ -37,7 +37,7 @@ class TestPipenvAudit(BasePackageManagerTest):
 
     def test_pipenv_audit_runs_pip_audit_returns_vulns(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=0, stdout=self.mock_pip_audit_out_with_vulns, stderr=""),
         )
@@ -48,7 +48,7 @@ class TestPipenvAudit(BasePackageManagerTest):
     def test_pipenv_audit_handles_audit_command_failure(self) -> None:
         # Setup audit command to simulate failure (non-zero exit code).
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=2, stdout="", stderr="error"),
         )
@@ -58,7 +58,7 @@ class TestPipenvAudit(BasePackageManagerTest):
 
     def test_pipenv_audit_with_re_audit_skips_install(self) -> None:
         self.mock_command_runner.set_response(
-            cmd="/splat/.local/bin/pipenv",
+            cmd="/usr/local/bin/pipenv",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             response=CommandResult(exit_code=0, stdout=self.mock_pip_audit_out_no_vulns, stderr=""),
         )
@@ -67,12 +67,12 @@ class TestPipenvAudit(BasePackageManagerTest):
 
         # Verify that install steps are skipped.
         self.assertFalse(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["install", "pip-audit", "--dev"])
+            self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["install", "pip-audit", "--dev"])
         )
         self.assertFalse(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["run", "pip", "freeze"])
+            self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["run", "pip", "freeze"])
         )
         # Requirements command should still be executed.
         self.assertTrue(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["requirements", "--dev"])
+            self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["requirements", "--dev"])
         )

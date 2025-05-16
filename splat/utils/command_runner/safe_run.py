@@ -1,11 +1,11 @@
 from typing import Literal, cast
 
 COMMAND_WHITELIST = Literal[
-    "/splat/.local/bin/pipenv", "/usr/bin/yarn", "/splat/.local/bin/poetry", "/usr/bin/git", "/splat/.local/bin/uv"
+    "/usr/local/bin/pipenv", "/usr/bin/yarn", "/usr/local/bin/poetry", "/usr/bin/git", "/usr/local/bin/uv"
 ]
 
 COMMAND_ARGS_WHITELIST: dict[COMMAND_WHITELIST, list[tuple[str, ...]]] = {
-    "/splat/.local/bin/pipenv": [
+    "/usr/local/bin/pipenv": [
         ("install",),
         ("requirements",),
         ("run", "pip", "freeze"),
@@ -16,7 +16,7 @@ COMMAND_ARGS_WHITELIST: dict[COMMAND_WHITELIST, list[tuple[str, ...]]] = {
         ("update",),
     ],
     "/usr/bin/yarn": [("install",), ("audit",), ("upgrade",)],
-    "/splat/.local/bin/poetry": [
+    "/usr/local/bin/poetry": [
         ("sync",),
         ("export",),
         ("add",),
@@ -26,7 +26,7 @@ COMMAND_ARGS_WHITELIST: dict[COMMAND_WHITELIST, list[tuple[str, ...]]] = {
         ("env", "use"),
     ],
     "/usr/bin/git": [("check-ignore",)],
-    "/splat/.local/bin/uv": [
+    "/usr/local/bin/uv": [
         ("sync",),
         ("export",),
         ("run", "pip-audit"),

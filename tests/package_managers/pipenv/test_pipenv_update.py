@@ -23,13 +23,11 @@ class TestPipenvUpdate(BasePackageManagerTest):
 
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/pipenv", args=["upgrade", "--ignore-pipfile", "package1==2.0.0"]
+                cmd="/usr/local/bin/pipenv", args=["upgrade", "--ignore-pipfile", "package1==2.0.0"]
             )
         )
-        self.assertTrue(self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["update", "--dev"]))
-        self.assertTrue(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["run", "pip", "freeze"])
-        )
+        self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["update", "--dev"]))
+        self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["run", "pip", "freeze"]))
         self.assertEqual(
             files_to_commit,
             [
@@ -48,17 +46,15 @@ class TestPipenvUpdate(BasePackageManagerTest):
         # Ensure pipenv upgrade is NOT called for transitive dependencies
         self.assertFalse(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/pipenv", args=["upgrade", "--ignore-pipfile", "package1==2.0.0"]
+                cmd="/usr/local/bin/pipenv", args=["upgrade", "--ignore-pipfile", "package1==2.0.0"]
             )
         )
         self.assertEqual(
             toml.dumps({"packages": {"package1": ">=1.0.0", "package2": "~=1.0"}}),
             self.mock_fs.files["/path/to/project/Pipfile"],
         )
-        self.assertTrue(self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["update", "--dev"]))
-        self.assertTrue(
-            self.mock_command_runner.has_called(cmd="/splat/.local/bin/pipenv", args=["run", "pip", "freeze"])
-        )
+        self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["update", "--dev"]))
+        self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/local/bin/pipenv", args=["run", "pip", "freeze"]))
         self.assertEqual(
             files_to_commit,
             [

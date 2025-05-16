@@ -16,7 +16,7 @@ class TestUvUpdate(BasePackageManagerTest):
         files_to_commit = self.uv_manager.update(vuln_report)
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/uv",
+                cmd="/usr/local/bin/uv",
                 args=["add", "package1~=2.0.0"],
             )
         )
@@ -37,7 +37,7 @@ class TestUvUpdate(BasePackageManagerTest):
         self.assertEqual(files_to_commit, [str(vuln_report.lockfile.path)])
         self.assertTrue(
             self.mock_command_runner.has_called(
-                cmd="/splat/.local/bin/uv",
+                cmd="/usr/local/bin/uv",
                 args=["lock", "--upgrade-package", "package1~=2.0.0"],
             )
         )

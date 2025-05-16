@@ -12,7 +12,7 @@ class UvCommandRunner:
 
     def sync(self, cwd: Path) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/uv",
+            cmd="/usr/local/bin/uv",
             args=["sync", "--dev"],
             cwd=cwd,
         )
@@ -20,14 +20,14 @@ class UvCommandRunner:
 
     def export(self, cwd: Path) -> None:
         self.runner.run(
-            cmd="/splat/.local/bin/uv",
+            cmd="/usr/local/bin/uv",
             args=["export", "--no-emit-project", "--dev", "--no-hashes", "-o", "requirements.txt"],
             cwd=cwd,
         )
 
     def run_pip_audit(self, cwd: Path) -> str:
         result = self.runner.run(
-            cmd="/splat/.local/bin/uv",
+            cmd="/usr/local/bin/uv",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             cwd=cwd,
             allowed_return_codes=[1],
@@ -43,7 +43,7 @@ class UvCommandRunner:
         else:
             args.append(f"{dep_name}~={dep_version}")
         result = self.runner.run(
-            cmd="/splat/.local/bin/uv",
+            cmd="/usr/local/bin/uv",
             args=args,
             cwd=cwd,
         )
@@ -51,7 +51,7 @@ class UvCommandRunner:
 
     def upgrade(self, dep_name: str, dep_version: str, cwd: Path, is_dev: bool) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/uv",
+            cmd="/usr/local/bin/uv",
             args=["lock", "--upgrade-package", f"{dep_name}~={dep_version}"],
             cwd=cwd,
         )
