@@ -34,7 +34,7 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV POETRY_VIRTUALENVS_CREATE=false
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y libnss-wrapper \
     # prepare dependencies for asdf
     curl git wget software-properties-common gnupg2 apt-transport-https \
     # asdf-nodejs
@@ -96,6 +96,9 @@ COPY splat/utils/aggregate_summaries.py aggregate_summaries.py
 RUN chmod +x bin/splat \
     && ln -s /splat/bin/splat /usr/local/bin/splat
 
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 RUN useradd -d /splat -u 1000 splatuser && \
     chown -R splatuser:splatuser /splat\
     && chmod -R a+rwX /splat
@@ -110,3 +113,4 @@ ENV PATH="/usr/local/bin:$ASDF_DATA_DIR/shims:/splat/bin/:$PATH" \
     # Allow "splat" to be used as a python module (there is a folder /splat/splat/):
     PYTHONPATH="/splat/"
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
