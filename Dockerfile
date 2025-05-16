@@ -63,25 +63,20 @@ RUN pip3 install --break-system-packages \
     pipenv \
     uv
 
+
+# === node.js (v20.x) ===
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
 # === yarn ===
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg \
     | gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian/ stable main" \
     | tee /etc/apt/sources.list.d/yarn.list && \
     apt-get update && \
-    apt-get install -y yarn
+    apt-get install -y yarn \
+    && rm -rf /var/lib/apt/lists/*
 
-# === asdf-cli ===
-RUN curl -LO https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz \
-    && tar -C /usr/local/bin -xzf asdf-v0.16.7-linux-amd64.tar.gz \
-    && rm asdf-v0.16.7-linux-amd64.tar.gz \
-    && chmod +x /usr/local/bin/asdf
-
-# === Node.js via asdf (global) ===
-RUN mkdir -p /splat/.asdf && \
-    asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
-    asdf install nodejs 20.11.0 && \
-    asdf set --home nodejs 20.11.0
 
 # === Splat deps install globally ===
 WORKDIR /splat/
