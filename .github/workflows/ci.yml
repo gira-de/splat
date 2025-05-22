@@ -14,7 +14,6 @@ env:
   IMAGE_NAME: girade/splat
 
 jobs:
-
   type_checks:
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +30,7 @@ jobs:
       - run: |
           pip install --upgrade poetry
           poetry install
-      - run: poetry run bandit -r splat/ tests/
+      - run: poetry run ruff format --check splat/ tests/
 
   code_style_check:
     runs-on: ubuntu-latest
@@ -69,19 +68,19 @@ jobs:
           poetry install
       - run: poetry run python -m unittest discover tests
 
-
   build_push_image:
     runs-on: ubuntu-latest
     needs:
-      - code_style_check
-      - code_format_check
-      - type_checks
       - bandit
-      - dependency_scan
+      - code_format_check
+      - code_style_check
+      - type_checks
       - unit_tests
+      - dependency_scan
+
     outputs:
-      image_latest:  ${{ steps.build.outputs.image_latest }}
-      image_major:   ${{ steps.build.outputs.image_major }}
+      image_latest: ${{ steps.build.outputs.image_latest }}
+      image_major: ${{ steps.build.outputs.image_major }}
       image_version: ${{ steps.build.outputs.image_version }}
     steps:
       - uses: actions/checkout@v4
@@ -103,7 +102,7 @@ jobs:
 
       - uses: ./.github/actions/system-tests
         with:
-          image_version:                     ${{ needs.build_push_image.outputs.image_version }}
-          system_test_github_access_token:    ${{ secrets.SYSTEM_TEST_GITHUB_ACCESS_TOKEN }}
-          system_test_gitlab_access_token:    ${{ secrets.SYSTEM_TEST_GITLAB_ACCESS_TOKEN }}
+          image_version: ${{ needs.build_push_image.outputs.image_version }}
+          system_test_github_access_token: ${{ secrets.SYSTEM_TEST_GITHUB_ACCESS_TOKEN }}
+          system_test_gitlab_access_token: ${{ secrets.SYSTEM_TEST_GITLAB_ACCESS_TOKEN }}
           bot_test_teams_webhook_url_general: ${{ secrets.BOT_TEST_TEAMS_WEBHOOK_URL_GENERAL }}

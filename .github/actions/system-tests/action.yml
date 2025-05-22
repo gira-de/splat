@@ -5,7 +5,7 @@ inputs:
     description: "Docker image name and tag to test"
     required: true
   system_test_github_access_token:
-    description: "GitHub ccess token for gira-de/splat-system-test"
+    description: "GitHub access token for gira-de/splat-system-test"
     required: true
   system_test_gitlab_access_token:
     description: "GitLab access token for gira-de/splat-system-test-gitlab"
