@@ -8,7 +8,7 @@ Thank you for considering contributing to Splat! Contributions are welcome and g
 
 To contribute, first fork the repository to your own GitHub or GitLab account:
 
-1. Navigate to the [Splat GitHub repository](https://github.com/gira-de/splat) # link goes here
+1. Navigate to the [Splat GitHub repository](https://github.com/gira-de/splat)
 2. Click on the "Fork" button.
 3. Clone your forked repository to your local machine:
 
@@ -16,7 +16,9 @@ To contribute, first fork the repository to your own GitHub or GitLab account:
 git clone git@github.com:<your-username>/splat.git
 cd splat
 ```
+
 4. Set up the upstream repository to keep your fork updated:
+
 ```bash
 git remote add upstream git@github.com:gira-de/splat.git
 ```
@@ -57,19 +59,21 @@ If you don't yet have an access token for GitLab and/or GitHub, search for "how 
 
 ```json
 {
- "name": "Existing Dockerfile",
- "build": {
-  "context": "..",
-  "dockerfile": "../Dockerfile"
- },
- "runArgs": ["--env-file",".devcontainer/devcontainer.env"]
+  "name": "Existing Dockerfile",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile"
+  },
+  "runArgs": ["--env-file", ".devcontainer/devcontainer.env"]
 }
 ```
 
 7. Rebuild the Container:
+
    - Rebuild the container to apply the environment configuration by pressing `Ctrl+Shift+P` and selecting `Dev Containers: Rebuild Container`.
 
 8. Verify Environment Variables:
+
    - Open a terminal in VSCode (inside the container) and run `printenv` to verify the variables.
 
 9. Setting up the virtual environment:
@@ -98,6 +102,54 @@ poetry run python -m unittest discover -v -p 'test_*.py' -s tests
 ### Running and Testing Splat
 
 With the environment set up, you can run, debug, and test Splat within the VSCode Dev Container:
+
 ```bash
 splat
 ```
+
+### 🛠️ How to Contribute
+
+You can contribute in several ways:
+
+- Reporting bugs
+- Suggesting new features
+- Improving documentation
+- Submitting code via pull requests
+
+### 🧑‍💻 Development Guidelines
+
+- Follow the existing code style.
+- Write clear, concise commit messages.
+- Include tests for new features or bug fixes.
+- Keep pull requests focused and minimal.
+
+### ✅ Pull Request Process
+
+- Fork and clone the repo.
+- Create a new branch.
+- Make your changes and commit.
+- Push to your fork.
+- Open a pull request against the main branch: Please ensure your pull request passes all tests and includes relevant documentation.
+
+### 🐛 Reporting Bugs
+
+If you find a bug, please open an issue and include:
+
+- A clear description of the problem
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (OS, version, etc.)
+
+### 💡 Suggesting Features
+
+We love hearing your ideas! When suggesting a feature, please include:
+
+- A clear explanation of the feature
+- Why it would be useful
+- Any alternatives you’ve considered
+
+### 📄 License
+
+By contributing, you agree that your contributions will be licensed under the same license as the project: MIT License.
+
+Thanks again for helping make Splat better! 💜

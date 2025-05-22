@@ -10,7 +10,7 @@ Splat currently focuses on automating the dependency update process. It is desig
 
 ## Features
 
-- **Dependency Vulnerability Scanning**: Scans supported lockfiles for vulnerabilities using auditing tool like `pip-audit` and `yarn audit`.
+- **Dependency Vulnerability Scanning**: Scans supported lockfiles for vulnerabilities using auditing tools like `pip-audit` and `yarn audit`.
 - **Targeted Updates**: Updates only vulnerable dependencies to the minimum secure version required, avoiding unnecessary upgrades. Major version updates are only done if necessary to fix a security vulnerability.
 - **Package Manager Detection** Automatically identifies supported package managers like yarn, pipenv or poetry in the target repositories and processes related vulnerability checks and fixes.
 - **Direct and Transitive Updates**: Can update both direct and transitive (aka indirect) dependencies. If the package manager supports it, it fixes security issues in transitive dependencies without updating the direct dependency.
@@ -47,7 +47,7 @@ Splat comes with plugins for the following platforms:
 
 You can test-drive splat on a local `git` repository that you previously cloned.
 
-That way, you can try out splat and see how it works. However, this will __not__:
+That way, you can try out splat and see how it works. However, this will **not**:
 
 - Push vulnerability fixes
 - Create merge requests
@@ -57,7 +57,7 @@ Instead, it will work on your local git repository so that you can inspect poten
 
 #### Create a splat configuration file
 
-Ensure a `splat.yaml` configuration file is set up.
+For Splat to work, you must have a `splat.yaml` configuration file set up.
 
 Here is a minimal example that you can tweak to your needs:
 
@@ -95,7 +95,6 @@ docker run \
   --project /home/splatuser/test-drive/
 ```
 
-
 ### Running splat on a schedule
 
 For production use, it is recommended to create a separate repository dedicated to hosting your splat.yaml configuration file and the Pipeline schedule responsible for running Splat.
@@ -105,36 +104,38 @@ To run splat you first need to create a full `splat.yaml` configuration file and
 To keep your sensitive information such as the access token out from your version control, you can use environment variables that are expanded when splat reads your configuration file.
 
 #### Recommended Practice: Dedicated User Account
+
 For better security and management, it is recommended to create a dedicated GitLab/GitHub user specifically for running Splat. This user should be granted an access token with the necessary scope and added to all the repositories that Splat will need to access. This approach ensures that access is controlled and isolated to this specific user, reducing the risk of unauthorized access.
 
 Here is a minimal set of environment variables that your repo has:
 
-|Variable|Description|
-|--------|-----------|
-|SPLAT_USER_ACCESS_TOKEN|This token is required by Splat to access all projects associated with the user. Depending on your platform, this should be a GitHub or GitLab user access token. Ensure the token has the appropriate scope (e.g., repo for GitHub or api for GitLab).
-|SPLAT_TEAMS_WEBHOOK_URL|This URL is used for sending notifications to Microsoft Teams.|
+| Variable                | Description                                                                                                                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SPLAT_USER_ACCESS_TOKEN | This token is required by Splat to access all projects associated with the user. Depending on your platform, this should be a GitHub or GitLab user access token. Ensure the token has the appropriate scope (e.g., repo for GitHub or api for GitLab). |
+| SPLAT_TEAMS_WEBHOOK_URL | This URL is used for sending notifications to Microsoft Teams.                                                                                                                                                                                          |
 
-(!) __Important:__ Please note that the environment variable names must match the names that you used in your config. You can use other names, and you can also use more environment variables in your `splat.yaml`.
+(!) **Important:** Please note that the environment variable names must match the names that you used in your config. You can use other names, and you can also use more environment variables in your `splat.yaml`.
 
 #### Run on GitHub Actions
+
 On the repository that hosts your `splat.yaml`, add a `.github/workflows/ci.yml` with the following content:
 
 ```yml
 name: Splat Runner
 
 on:
-  workflow_dispatch:  # For manual execution
+  workflow_dispatch: # For manual execution
   schedule:
-    - cron: "0 6 * * *"  # Every day at 6:00
+    - cron: "0 6 * * *" # Every day at 6:00
 
 jobs:
-  splat:  # This Job fetches and prepares data for splat-core
+  splat: # This Job fetches and prepares data for splat-core
     runs-on: ubuntu-latest
     container:
       image: girade/splat:1
       options: --user splatuser
     env:
-      HOME: /splat  # Ensures Python resolves user-specific paths correctly within the container
+      HOME: /splat # Ensures Python resolves user-specific paths correctly within the container
       SPLAT_USER_ACCESS_TOKEN: ${{ secrets.SPLAT_USER_ACCESS_TOKEN }}
       SPLAT_TEAMS_WEBHOOK_URL: ${{ secrets.SPLAT_TEAMS_WEBHOOK_URL }}
     outputs:
@@ -148,7 +149,7 @@ jobs:
           json=$(cat /splat/platform_projects.json | jq -c '.')
           echo "platform_projects=$json" >> $GITHUB_OUTPUT
 
-  splat-core:  # This Job processes the projects data (platform_projects) output by the Splat job
+  splat-core: # This Job processes the projects data (platform_projects) output by the Splat job
     needs: splat
     runs-on: ubuntu-latest
     name: Process ${{ matrix.platform_projects.project_name }}
@@ -156,7 +157,7 @@ jobs:
       image: girade/splat:1
       options: --user splatuser
     env:
-      HOME: /splat  # Ensures Python resolves user-specific paths correctly within the container
+      HOME: /splat # Ensures Python resolves user-specific paths correctly within the container
       SPLAT_USER_ACCESS_TOKEN: ${{ secrets.SPLAT_USER_ACCESS_TOKEN }}
       SPLAT_TEAMS_WEBHOOK_URL: ${{ secrets.SPLAT_TEAMS_WEBHOOK_URL }}
     strategy:
@@ -207,7 +208,6 @@ splat_core: # Downstream pipeline responsible for processing child pipeline jobs
   variables:
     DEFAULT_SPLAT_IMAGE: girade/splat:1 # Default Docker image to use in the downstream pipeline
 ```
-
 
 After that, go to your GitLab Web UI and create a scheduled pipeline for this repository. We recommend to run splat once per day.
 
