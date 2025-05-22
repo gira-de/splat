@@ -4,7 +4,6 @@
 repos/
 __pycache__/
 .mypy_*
-.gitlab-ci-local
 builds/
 test-project/
 .devcontainer/*.env

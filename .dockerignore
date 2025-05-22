@@ -2,7 +2,6 @@
 .venv/
 .github/
 .devcontainer/
-.gitlab-ci.yml
 .gitignore
 local_build_and_run.sh
 tests/
