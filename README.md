@@ -91,7 +91,7 @@ docker run \
   --pull=always \
   -it \
   --user="$(id -u):$(id -g)" \
-  -v <path-to-you-repository>:/splat/test-drive/ \
+  -v <path-to-your-repository>:/splat/test-drive/ \
   -v $(pwd)/splat.yaml:/splat/splat.yaml \
   girade/splat:1 \
   splat \
