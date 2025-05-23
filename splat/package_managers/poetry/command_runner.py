@@ -15,7 +15,7 @@ class PoetryCommandRunner:
     def env_use(self, python_version: str, cwd: Path) -> None:
         python_version_full_path = f"/usr/bin/{python_version}"
         result = self.runner.run(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["env", "use", python_version_full_path],
             cwd=cwd,
         )
@@ -23,7 +23,7 @@ class PoetryCommandRunner:
 
     def sync(self, cwd: Path) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["sync", "--all-groups"],
             cwd=cwd,
         )
@@ -32,7 +32,7 @@ class PoetryCommandRunner:
     def export(self, cwd: Path) -> None:
         requirements_file_path = cwd / "requirements.txt"
         result = self.runner.run(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["export", "--without-hashes", "--all-groups"],
             cwd=cwd,
         )
@@ -40,7 +40,7 @@ class PoetryCommandRunner:
 
     def run_pip_audit(self, cwd: Path) -> str:
         result = self.runner.run(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["run", "pip-audit", "-r", "requirements.txt", "--fix", "-f", "json"],
             cwd=cwd,
             allowed_return_codes=[1],
@@ -56,7 +56,7 @@ class PoetryCommandRunner:
         else:
             args.append(f"{dep_name}@^{dep_version}")
         result = self.runner.run(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=args,
             cwd=cwd,
         )
@@ -64,7 +64,7 @@ class PoetryCommandRunner:
 
     def lock(self, cwd: Path) -> None:
         result = self.runner.run(
-            cmd="/splat/.local/bin/poetry",
+            cmd="/usr/local/bin/poetry",
             args=["lock", "--no-update"],
             cwd=cwd,
         )

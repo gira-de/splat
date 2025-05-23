@@ -37,6 +37,7 @@ runs:
     - name: Run tests
       run: |
         docker run --rm \
+          --user="$(id -u):$(id -g)" \
           -e SYSTEM_TEST_GITLAB_ACCESS_TOKEN="${{ inputs.system_test_gitlab_access_token }}" \
           -e SYSTEM_TEST_GITHUB_ACCESS_TOKEN="${{ inputs.system_test_github_access_token }}" \
           -e BOT_TEST_TEAMS_WEBHOOK_URL_GENERAL="${{ inputs.bot_test_teams_webhook_url_general }}" \
