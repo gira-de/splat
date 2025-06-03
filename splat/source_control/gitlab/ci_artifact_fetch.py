@@ -86,7 +86,7 @@ def download_artifact(
 
 def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: Optional[EnvManager] = None) -> None:
     env_manager = env_manager or OsEnvManager(default_logger)
-    ci_api_url = env_manager.get("CI_API_V4_URL")
+    ci_api_url = env_manager.get("CI_SERVER_URL")
     ci_project_id = env_manager.get("CI_PROJECT_ID")
     ci_pipeline_id = env_manager.get("CI_PIPELINE_ID")
     access_token = env_manager.get(access_token_name)
