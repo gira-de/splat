@@ -60,7 +60,6 @@ def checkout_branch(repo_path: Path, branch_name: str, is_local_project: bool = 
         if branch_exists is True:
             repo.git.switch(branch_name)
             if is_local_project is False:
-                repo.git.checkout(branch_name)
                 repo.remote().pull(branch_name)
                 logger.info(
                     f"Checked out and pulled from existing remote branch '{branch_name}' "
