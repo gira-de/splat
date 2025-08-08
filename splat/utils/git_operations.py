@@ -58,7 +58,7 @@ def checkout_branch(repo_path: Path, branch_name: str, is_local_project: bool = 
         branch_exists = branch_name in (repo.heads if is_local_project else repo.remote().refs)
 
         if branch_exists is True:
-            repo.git.checkout(branch_name)
+            repo.git.switch(branch_name)
             if is_local_project is False:
                 repo.git.checkout(branch_name)
                 repo.remote().pull(branch_name)
