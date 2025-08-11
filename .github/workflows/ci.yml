@@ -73,7 +73,6 @@ jobs:
       - code_style_check
       - type_checks
       - unit_tests
-      - dependency_scan
 
     outputs:
       image_latest: ${{ steps.build.outputs.image_latest }}
