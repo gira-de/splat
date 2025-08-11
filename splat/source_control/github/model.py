@@ -21,7 +21,7 @@ class HeadGithubPullRequestEntry(BaseModel, extra="allow"):
 
 class GithubPullRequestEntry(BaseModel, extra="allow"):
     title: str
-    body: str
+    body: str | None
     url: str
     html_url: str
     head: HeadGithubPullRequestEntry
