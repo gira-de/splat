@@ -156,7 +156,7 @@ class GithubPlatform(GitPlatformInterface):
 
             matching_pr = self.pr_handler.find_matching_pr(project, title, timeout)
 
-            if matching_pr:
+            if matching_pr and matching_pr.body:
                 new_pr_description = self.description_updater.update_existing_description(
                     matching_pr.body,
                     new_commit_messages_part,
