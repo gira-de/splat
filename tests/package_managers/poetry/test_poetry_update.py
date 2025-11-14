@@ -1,5 +1,7 @@
 import unittest
 
+import toml
+
 from splat.model import DependencyType
 from splat.package_managers.poetry.PoetryPackageManager import PoetryPackageManager
 from tests.package_managers.base_test import BasePackageManagerTest
@@ -32,6 +34,10 @@ class TestPoetryUpdate(BasePackageManagerTest):
     def test_update_transitive_dependency(self) -> None:
         vuln_report = self.audit_report
         vuln_report.dep.type = DependencyType.TRANSITIVE
+        mock_pyproject_content = toml.dumps(
+            {"tool": {"poetry": {"dependencies": {"package1": "^1.0.0", "package2": "^1.0.0"}}}}
+        )
+        self.mock_fs.write("/path/to/project/pyproject.toml", mock_pyproject_content)
 
         files_to_commit = self.poetry_manager.update(vuln_report)
 
