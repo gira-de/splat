@@ -14,7 +14,6 @@ from splat.package_managers.poetry.repo_manager import PoetryRepoManager
 from splat.utils.command_runner.interface import CommandRunner
 from splat.utils.env_manager.interface import EnvManager
 from splat.utils.fs import FileSystemInterface
-from splat.utils.git_operations import discard_files_changes
 
 
 class PoetryPackageManager(PackageManagerInterface):
@@ -90,7 +89,11 @@ class PoetryPackageManager(PackageManagerInterface):
                     cwd=vuln_report.lockfile.path.parent,
                     is_dev=vuln_report.dep.is_dev,
                 )
-                discard_files_changes(vuln_report.lockfile.path.parent, [str(pyproject_file_path)])
+                self.pyproject_manager.remove_dependency(
+                    pyproject_path=str(pyproject_file_path),
+                    dependency_name=vuln_report.dep.name,
+                    is_dev=vuln_report.dep.is_dev,
+                )
                 self.poetry.lock(vuln_report.lockfile.path.parent)
                 self.logger.info(f"Successfully updated sub-dependency: {init_log_msg}")
             else:
