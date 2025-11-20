@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
 
+from git import Repo
+
 from splat.config.config_loader import load_project_config
 from splat.config.config_merger import merge_configs
 from splat.config.model import Config
@@ -20,6 +22,17 @@ from splat.utils.project_processor.project_operations import get_logfile_url, ha
 def process_local_project(project: LocalProject, config: Config) -> None:
     package_managers = initialize_package_managers(config.package_managers)
     branch_name = config.general.git.branch_name
+    try:
+        repo = Repo(project.path)
+        if repo.is_dirty(untracked_files=True) or bool(repo.untracked_files):
+            logger.error(
+                "Uncommitted or untracked files detected in the local project. "
+                "Please stash your changes and try again."
+            )
+            return
+    except Exception as e:
+        logger.error(f"Failed to verify repository state for local project '{project.name_with_namespace}': {e}")
+        return
     log_and_checkout_project(project, branch_name, is_local_project=True)
     try:
         audit_and_fix_project(project, package_managers, config)
