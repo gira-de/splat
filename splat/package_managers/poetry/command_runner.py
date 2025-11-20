@@ -65,7 +65,7 @@ class PoetryCommandRunner:
     def lock(self, cwd: Path) -> None:
         result = self.runner.run(
             cmd="/usr/local/bin/poetry",
-            args=["lock", "--no-update"],
+            args=["lock"],
             cwd=cwd,
         )
         self.logger.debug(result.stdout)

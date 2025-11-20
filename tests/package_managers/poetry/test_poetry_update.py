@@ -38,7 +38,7 @@ class TestPoetryUpdate(BasePackageManagerTest):
         self.assertTrue(
             self.mock_command_runner.has_called(cmd="/usr/local/bin/poetry", args=["add", "package1@^2.0.0"])
         )
-        self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/local/bin/poetry", args=["lock", "--no-update"]))
+        self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/local/bin/poetry", args=["lock"]))
         self.assertEqual(files_to_commit, [str(vuln_report.lockfile.path)])
 
     def test_update_skips_when_fixed_version_is_none(self) -> None:

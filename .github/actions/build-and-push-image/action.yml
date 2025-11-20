@@ -26,7 +26,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
     - run: pip install --upgrade poetry
       shell: bash
 
@@ -40,11 +39,7 @@ runs:
     - uses: rlespinasse/github-slug-action@v5
     - name: Set Docker prefix
       run: |
-        if [ -n "$GITHUB_HEAD_REF_SLUG" ]; then
-          BASE="$GITHUB_HEAD_REF_SLUG"
-        else
-          BASE="$GITHUB_REF_NAME_SLUG"
-        fi
+        BASE="$GITHUB_REF_NAME_SLUG"
         if [ "$BASE" = "main" ]; then
           echo "PREFIX=" >> $GITHUB_ENV
         else

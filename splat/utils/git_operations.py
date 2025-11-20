@@ -52,30 +52,30 @@ def checkout_branch(repo_path: Path, branch_name: str, is_local_project: bool = 
     """Checks out the specified branch if it exists, or creates it if it does not."""
     try:
         repo = Repo(repo_path, search_parent_directories=True)
-        main_branch_name = repo.git.symbolic_ref("refs/remotes/origin/HEAD").split("/")[-1]
-        logger.debug(f"Checking out branch '{main_branch_name}' to '{branch_name}' in repository '{repo_path.name}'")
+        # determine default branch
+        default_branch = repo.git.symbolic_ref("refs/remotes/origin/HEAD").split("/")[-1]
+        logger.debug(f"Checking out branch '{default_branch}' to '{branch_name}' in repository '{repo_path.name}'")
 
         branch_exists = branch_name in (repo.heads if is_local_project else repo.remote().refs)
 
         if branch_exists is True:
-            repo.git.checkout(branch_name)
+            repo.git.switch(branch_name)
             if is_local_project is False:
-                repo.git.checkout(branch_name)
                 repo.remote().pull(branch_name)
                 logger.info(
                     f"Checked out and pulled from existing remote branch '{branch_name}' "
-                    f"in repository '{repo_path.name}' (default branch: '{main_branch_name}')"
+                    f"in repository '{repo_path.name}' (default branch: '{default_branch}')"
                 )
             else:
                 logger.info(
                     f"Checked out existing local branch '{branch_name}' in repository '{repo_path.name}' "
-                    f"(default branch: '{main_branch_name}')"
+                    f"(default branch: '{default_branch}')"
                 )
         else:
             repo.git.checkout("HEAD", b=branch_name)
             logger.info(
                 f"Created and checked out new branch '{branch_name}' in repository '{repo_path.name}' "
-                f"(from default branch: '{main_branch_name}')"
+                f"(from default branch: '{default_branch}')"
             )
     except Exception as e:
         logger.error(f"Failed to checkout, pull, or create branch '{branch_name}' in repository '{repo_path}': {e}")

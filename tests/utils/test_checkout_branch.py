@@ -25,7 +25,7 @@ class TestCheckoutBranch(unittest.TestCase):
         checkout_branch(repo_path, branch_name, is_local_project=False)
 
         # Assert that the branch was checked out and pulled
-        mock_git.checkout.assert_any_call(branch_name)
+        mock_git.switch.assert_any_call(branch_name)
         mock_remote.pull.assert_called_once_with(branch_name)
 
         # Check the correct log message with the mocked branch name
@@ -49,7 +49,7 @@ class TestCheckoutBranch(unittest.TestCase):
         checkout_branch(repo_path, branch_name, is_local_project=True)
 
         # Assert that the branch was checked out
-        mock_git.checkout.assert_called_once_with(branch_name)
+        mock_git.switch.assert_called_once_with(branch_name)
         mock_logger.info.assert_called_with(
             f"Checked out existing local branch '{branch_name}' in repository '{repo_path.name}' "
             f"(default branch: 'HEAD')"
