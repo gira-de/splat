@@ -4,19 +4,11 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
+from splat.git.interface import GitClientInterface
 from splat.interface.GitPlatformInterface import GitPlatformInterface
-from splat.model import Project, ProjectAuditFixResult, ProjectSummary, RemoteProject, StatusReport
-from splat.utils.git_operations import checkout_branch, push_changes
+from splat.model import ProjectAuditFixResult, ProjectSummary, RemoteProject, StatusReport
 from splat.utils.logger_config import logger
 from splat.utils.project_processor.project_notifier import ProjectNotifier
-
-
-def log_and_checkout_project(project: Project, branch_name: str, is_local_project: bool = False) -> None:
-    """Handles logging and checking out the branch for a project."""
-    logger.info(f"Processing Project: {project.name_with_namespace}")
-    logger.update_context(f"splat -> {project.name_with_namespace}")
-
-    checkout_branch(repo_path=project.path, branch_name=branch_name, is_local_project=is_local_project)
 
 
 def export_json_summary(
@@ -56,6 +48,7 @@ def handle_commits(
     branch_name: str,
     notifier: ProjectNotifier,
     git_platform: GitPlatformInterface,
+    git_client: GitClientInterface,
 ) -> tuple[StatusReport, Optional[str]]:
     """Handle the commit actions for remote projects."""
 
@@ -67,7 +60,7 @@ def handle_commits(
         logger.info("No vulnerabilities fixed, not pushing any changes")
         return project_status, None
 
-    push_changes(repo_path=project.path, branch_name=branch_name)
+    git_client.push(branch_name)
 
     try:
         logger.update_context(f"splat -> {project.name_with_namespace} -> {git_platform.type}")

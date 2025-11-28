@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from splat.config.config_loader import load_config
+from splat.git.gitpython_client import GitPythonClient
 from splat.model import LocalProject
 from splat.source_control.gitlab.ci_artifact_fetch import fetch_gitlab_ci_summary_artifact
 from splat.utils.env_manager.os import OsEnvManager
-from splat.utils.logger_config import logger
+from splat.utils.logger_config import default_logger, logger
 from splat.utils.logging_utils import generate_banner
 from splat.utils.parseargs import parse_arguments
 from splat.utils.project_processor.project_operations import get_logfile_url
@@ -26,11 +27,11 @@ def main() -> None:
 
             if args.local_projects is not None:
                 for local_project in args.local_projects:
+                    project_path = Path(local_project).resolve()
                     process_local_project(
-                        project=LocalProject(
-                            name_with_namespace=local_project.name, path=Path(local_project).resolve()
-                        ),
+                        project=LocalProject(name_with_namespace=local_project.name, path=project_path),
                         config=config,
+                        git_client=GitPythonClient(str(project_path), default_logger),
                     )
             elif args.project_id:
                 process_project_with_id(args, config)

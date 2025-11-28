@@ -1,13 +1,12 @@
 from contextlib import contextmanager
 from typing import Callable, Generator, Optional
 
-from git import Repo
-
 from splat.config.model import Config
+from splat.git.interface import GitClientInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
 from splat.model import AuditReport, Lockfile, Project, ProjectAuditFixResult, Severity, StatusReport
 from splat.utils.errors import SkipLockfileProcessingError
-from splat.utils.git_operations import commit_changes, discard_files_changes
+from splat.utils.git_operations import create_commit_message
 from splat.utils.hooks_runner import run_pre_commit_hooks
 from splat.utils.logger_config import ContextLoggerAdapter
 from splat.utils.logger_config import logger as production_logger
@@ -54,6 +53,7 @@ def audit_and_fix_project(
     project: Project,
     package_managers: list[PackageManagerInterface],
     config: Config,
+    git_client: GitClientInterface,
     notify_callback: Optional[Callable[[str, Exception, Optional[AuditReport]], None]] = None,
     logger: ContextLoggerAdapter = production_logger,
 ) -> ProjectAuditFixResult:
@@ -65,6 +65,7 @@ def audit_and_fix_project(
     for manager in package_managers:
         logger.update_context(f"splat -> {project.name_with_namespace} -> {manager.name}")
         found_lockfiles: list[Lockfile] = manager.find_lockfiles(project)
+        found_lockfiles = [lf for lf in found_lockfiles if not git_client.is_ignored(str(lf.path))]
 
         for found_lockfile in found_lockfiles:
             try:
@@ -110,11 +111,10 @@ def audit_and_fix_project(
                         )
 
                     # Commit Changes
-                    git_repo = Repo(project.path)
-                    commit_message = commit_changes(git_repo, files_to_commit, report)
-                    discard_files_changes(repo_path=project.path)
-                    if commit_message != "":
+                    commit_message = create_commit_message(report)
+                    if git_client.commit_files(files_to_commit, commit_message):
                         commit_messages.insert(0, commit_message)
+                    git_client.discard_changes()
 
                 if commit_messages:
                     with handle_project_errors(
