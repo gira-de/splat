@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -12,7 +13,6 @@ from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
 from splat.model import LocalProject, ProjectSummary, RemoteProject, Severity, StatusReport
-from splat.utils.git_operations import clean_up_project_dir
 from splat.utils.logger_config import logger, logger_manager
 from splat.utils.plugin_initializer.package_managers_init import initialize_package_managers
 from splat.utils.project_processor.audit_fixer import audit_and_fix_project
@@ -57,7 +57,7 @@ def clone_and_process_project(
         )
         if project_clone_dir.exists():
             logger.debug(f"Directory {project_clone_dir} already exists. Removing it..")
-            clean_up_project_dir(project_clone_dir)
+            shutil.rmtree(project_clone_dir)
         clone_url_with_token = project.clone_url.replace("https://", f"https://oauth2:{git_platform.access_token}@")
         git_client = GitPythonClient.clone(
             url=clone_url_with_token, to_path=project_clone_dir, no_single_branch=True, depth=1
@@ -129,10 +129,10 @@ def process_remote_project(
         logger.error(f"Error processing remote project '{project.name_with_namespace}': {str(e)}")
 
     if not merged_config.general.debug.skip_cleanup:
-        clean_up_project_dir(project.path)
+        logger.debug(f"Removing {project.path}")
+        shutil.rmtree(project.path)
 
     time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
-
     return ProjectSummary(
         project_name=project.name_with_namespace,
         time_stamp=time_stamp,
