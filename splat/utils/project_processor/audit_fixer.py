@@ -3,10 +3,10 @@ from typing import Callable, Generator, Optional
 
 from splat.config.model import Config
 from splat.git.interface import GitClientInterface
+from splat.git.utils import create_commit_message
 from splat.interface.PackageManagerInterface import PackageManagerInterface
 from splat.model import AuditReport, Lockfile, Project, ProjectAuditFixResult, Severity, StatusReport
 from splat.utils.errors import SkipLockfileProcessingError
-from splat.utils.git_operations import create_commit_message
 from splat.utils.hooks_runner import run_pre_commit_hooks
 from splat.utils.logger_config import ContextLoggerAdapter
 from splat.utils.logger_config import logger as production_logger

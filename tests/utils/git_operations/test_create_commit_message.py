@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+from splat.git.utils import _format_vulnerability_details, _get_severity_emoji, create_commit_message
 from splat.model import (
     AuditReport,
     Dependency,
@@ -8,11 +9,6 @@ from splat.model import (
     Lockfile,
     Severity,
     VulnerabilityDetail,
-)
-from splat.utils.git_operations import (
-    _format_vulnerability_details,
-    _get_severity_emoji,
-    create_commit_message,
 )
 
 
