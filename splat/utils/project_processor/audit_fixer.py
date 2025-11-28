@@ -59,7 +59,7 @@ def audit_and_fix_project(
 ) -> ProjectAuditFixResult:
     commit_messages: list[str] = []
     remaining_vulns: list[AuditReport] = []
-    highest_severity: Optional[Severity] = None
+    highest_severity = Severity.UNKNOWN
     status_report = [StatusReport.CLEAN]  # mutable
 
     for manager in package_managers:

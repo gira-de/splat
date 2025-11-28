@@ -1,7 +1,6 @@
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 from splat.config.config_loader import load_project_config
@@ -101,7 +100,7 @@ def process_remote_project(
     notifier = ProjectNotifier(project, notification_sinks)
     logger_manager.update_logger_level(merged_config.general.logging.level)
     branch_name = merged_config.general.git.branch_name
-    severity_score: Optional[Severity] = Severity.UNKNOWN
+    severity_score = Severity.UNKNOWN
     mr_url = None
     logfile_url = get_logfile_url()
 
