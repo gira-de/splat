@@ -1,6 +1,7 @@
 from typing import Optional
 
 import toml
+import tomlkit
 
 from splat.interface.logger import LoggerInterface
 from splat.model import Dependency
@@ -57,3 +58,24 @@ class PoetryPyprojectManager:
         repo_configs = {source["name"]: source["url"] for source in sources if "name" in source and "url" in source}
 
         return repo_configs
+
+    def remove_dependency(self, pyproject_path: str, dependency_name: str, is_dev: bool = False) -> bool:
+        """
+        Remove a dependency from poetry's pyproject.toml file"""
+        pyproject_content = tomlkit.parse(self.fs.read(pyproject_path))
+        removed = False
+        tool_poetry = pyproject_content.get("tool", None).get("poetry", None)
+        if tool_poetry is None:
+            return False
+
+        if is_dev:
+            deps = tool_poetry.get("group", None).get("dev", None).get("dependencies", None)
+        else:
+            deps = tool_poetry.get("dependencies", None)
+
+        if dependency_name in deps:
+            deps.pop(dependency_name)
+            removed = True
+        if removed:
+            self.fs.write(pyproject_path, tomlkit.dumps(pyproject_content))
+        return removed
