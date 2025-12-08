@@ -54,6 +54,10 @@ class UpdateFailureSinkConfig(BaseModel):
     webhook_url: str
 
 
+class ProjectSkippedSinkConfig(BaseModel):
+    webhook_url: str
+
+
 class ErrorSinkConfig(BaseModel):
     webhook_url: str
 
@@ -62,4 +66,5 @@ class TeamsSinkConfig(SinkConfig):
     webhook_url: str
     merge_request: Optional[MergeRequestSinkConfig] = None
     update_failure: Optional[UpdateFailureSinkConfig] = None
+    project_skipped: Optional[ProjectSkippedSinkConfig] = None
     error: Optional[ErrorSinkConfig] = None
