@@ -1,7 +1,19 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
+
+from splat.config.model import GitConfig
+
+DEFAULT_GIT_AUTHOR_NAME = "splat-bot"
+DEFAULT_GIT_AUTHOR_EMAIL = "splatuser-bot@myorg.com"
+
+
+@dataclass(frozen=True)
+class GitCommitAuthor:
+    name: str
+    email: str
 
 
 class GitClientInterface(ABC):
@@ -48,5 +60,17 @@ class GitClientInterface(ABC):
         pass
 
     @abstractmethod
-    def push(self, branch: str) -> None:
+    def push(self, branch: str, force: bool = False) -> None:
+        pass
+
+    @abstractmethod
+    def configure_identity(self, git_cfg: GitConfig) -> None:
+        pass
+
+    @abstractmethod
+    def get_commit_authors_between(self, base_ref: str, branch_ref: str) -> list[GitCommitAuthor]:
+        pass
+
+    @abstractmethod
+    def reset_branch_to_ref(self, branch: str, base_ref: str) -> None:
         pass

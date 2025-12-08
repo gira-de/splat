@@ -46,6 +46,7 @@ class StatusReport(Enum):
     ERROR = "error"
     MR_PENDING = "merge_pending"
     VULNS_LEFT = "vulnerabilities_left"
+    MANUAL_CHANGES = "manual_changes"  # NON_SPLAT_COMMITS
 
 
 @dataclass

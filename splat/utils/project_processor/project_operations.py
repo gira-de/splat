@@ -55,12 +55,12 @@ def handle_commits(
     commits = project_result.commit_messages
     remaining_vulns = project_result.remaining_vulns
     project_status = project_result.status_report
+    # Always force-push at the end to sync the remote branch
+    git_client.push(branch_name, force=True)
 
     if not commits and not remaining_vulns:
-        logger.info("No vulnerabilities fixed, not pushing any changes")
+        logger.info("No vulnerabilities fixed. Remote branch is synced, no new merge request created.")
         return project_status, None
-
-    git_client.push(branch_name)
 
     try:
         logger.update_context(f"splat -> {project.name_with_namespace} -> {git_platform.type}")
