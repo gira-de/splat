@@ -1,4 +1,12 @@
+from splat.config.model import GitConfig
+from splat.git.interface import DEFAULT_GIT_AUTHOR_EMAIL, DEFAULT_GIT_AUTHOR_NAME, GitCommitAuthor
 from splat.model import AuditReport, DependencyType, Severity, VulnerabilityDetail
+
+
+def is_splat_author(author: GitCommitAuthor, git_cfg: GitConfig) -> bool:
+    allowed_email = (git_cfg.author_email or DEFAULT_GIT_AUTHOR_EMAIL).lower()
+    allowed_name = git_cfg.author_name or DEFAULT_GIT_AUTHOR_NAME
+    return (author.email or "").lower() == allowed_email or author.name == allowed_name
 
 
 def _get_severity_emoji(severity: Severity) -> str:
