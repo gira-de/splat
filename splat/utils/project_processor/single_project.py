@@ -143,7 +143,6 @@ def process_remote_project(
             )
             logger.info(msg)
             _remove_project_dir()
-            notifier.notify_project_skipped(msg, logfile_url)
             return _build_summary(StatusReport.MANUAL_CHANGES, severity_score, None)
         # Only splat commits (or no commits) on the branch
         git_client.reset_branch_to_ref(branch_name, default_branch)
