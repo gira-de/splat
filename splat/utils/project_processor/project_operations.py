@@ -57,10 +57,10 @@ def handle_commits(
     project_status = project_result.status_report
 
     if not commits and not remaining_vulns:
-        logger.info("No vulnerabilities fixed, not pushing any changes")
+        logger.info("No vulnerabilities fixed and no remaining vulnerabilities, not pushing any changes")
         return project_status, None
 
-    git_client.push(branch_name)
+    git_client.push(branch_name, force=True)
 
     try:
         logger.update_context(f"splat -> {project.name_with_namespace} -> {git_platform.type}")
