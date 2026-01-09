@@ -16,6 +16,7 @@ class RepoHeadGithubPullRequestEntry(BaseModel, extra="allow"):
 
 
 class HeadGithubPullRequestEntry(BaseModel, extra="allow"):
+    ref: str
     repo: RepoHeadGithubPullRequestEntry
 
 

@@ -155,7 +155,7 @@ class GithubPlatform(GitPlatformInterface):
             else:
                 draft = False
 
-            matching_pr = self.pr_handler.find_matching_pr(project, title, timeout)
+            matching_pr = self.pr_handler.find_open_pr(project, branch_name, timeout)
 
             if matching_pr and matching_pr.body:
                 new_pr_description = self.description_updater.update_existing_description(
