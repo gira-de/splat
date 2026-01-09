@@ -28,7 +28,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         ]
         mock_get.return_value = MagicMock(status_code=200, json=MagicMock(return_value=pr_list))
 
-        matching_pr = self.github_platform.pr_handler.find_matching_pr(self.project, "Splat Dependency Updates", 10)
+        matching_pr = self.github_platform.pr_handler.find_open_pr(self.project, "Splat Dependency Updates", 10)
         self.assertIsNotNone(matching_pr)
         if matching_pr:
             self.assertEqual(matching_pr.title, "Splat Dependency Updates")
@@ -52,7 +52,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         ]
         mock_get.return_value = MagicMock(status_code=200, json=MagicMock(return_value=pr_list))
 
-        matching_pr = self.github_platform.pr_handler.find_matching_pr(self.project, "Splat Dependency Updates", 10)
+        matching_pr = self.github_platform.pr_handler.find_open_pr(self.project, self.branch_name, 10)
 
         self.assertIsNone(matching_pr)
 
@@ -61,7 +61,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         mock_get.return_value = MagicMock(status_code=500)
 
         with self.assertRaises(Exception):
-            self.github_platform.pr_handler.find_matching_pr(self.project, "Splat Dependency Updates", 10)
+            self.github_platform.pr_handler.find_open_pr(self.project, self.branch_name, 10)
 
     @patch("requests.get")
     def test_find_matching_pr_logs_error_on_json_validation_failure(self, mock_get: MagicMock) -> None:
@@ -76,7 +76,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         ]
         mock_get.return_value = MagicMock(status_code=200, json=MagicMock(return_value=invalid_pr_list))
 
-        self.github_platform.pr_handler.find_matching_pr(self.project, "Splat Dependency Updates", 10)
+        self.github_platform.pr_handler.find_open_pr(self.project, self.branch_name, 10)
 
         self.assertTrue(
             self.mock_logger.has_logged(

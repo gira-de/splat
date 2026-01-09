@@ -18,7 +18,7 @@ class GithubPRHandler:
         self.api = api
         self.logger = logger
 
-    def find_matching_pr(self, project: RemoteProject, pr_title: str, timeout: int) -> GithubPullRequestEntry | None:
+    def find_open_pr(self, project: RemoteProject, branch_name: str, timeout: int) -> GithubPullRequestEntry | None:
         try:
             response = self.api.get_json(
                 endpoint=f"/repos/{project.name_with_namespace}/pulls",
@@ -31,7 +31,7 @@ class GithubPRHandler:
         for line in pulls:
             try:
                 pr = GithubPullRequestEntry.model_validate(line)
-                if pr.title == pr_title:
+                if pr.head.ref == branch_name:
                     self.logger.info(f"Found an open pull request in project {project.name_with_namespace}")
                     return pr
             except ValidationError as e:
