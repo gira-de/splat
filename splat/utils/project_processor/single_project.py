@@ -134,6 +134,7 @@ def process_remote_project(
     git_client.switch_branch(branch_name)
     if branch_exists_remote:
         git_client.pull(branch_name)
+        open_mr_url = git_platform.get_open_merge_request_url(project, branch_name) or None
         commit_authors = git_client.get_commit_authors_between(default_branch, branch_name)
         non_splat_authors = [a for a in commit_authors if not is_splat_author(a, merged_config.general.git)]
         if len(non_splat_authors) > 0:
@@ -143,7 +144,8 @@ def process_remote_project(
             )
             logger.info(msg)
             _remove_project_dir()
-            return _build_summary(StatusReport.MANUAL_CHANGES, severity_score, None)
+            notifier.notify_project_skipped(msg, logfile_url)
+            return _build_summary(StatusReport.MANUAL_CHANGES, severity_score, open_mr_url)
         # Only splat commits (or no commits) on the branch
         git_client.reset_branch_to_ref(branch_name, default_branch)
     try:

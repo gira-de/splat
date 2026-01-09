@@ -127,6 +127,12 @@ class GithubPlatform(GitPlatformInterface):
             self.logger.info("No projects found.")
         return projects
 
+    def get_open_merge_request_url(self, project: RemoteProject, branch_name: str, timeout: int = 10) -> str | None:
+        open_pr = self.pr_handler.find_open_pr(project, branch_name, timeout)
+        if not open_pr:
+            return None
+        return open_pr.html_url
+
     def create_or_update_merge_request(
         self,
         project: RemoteProject,

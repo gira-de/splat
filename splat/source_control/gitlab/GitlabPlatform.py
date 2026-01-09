@@ -66,6 +66,12 @@ class GitlabPlatform(GitPlatformInterface):
         else:
             return self.project_handler.fetch_projects(timeout)
 
+    def get_open_merge_request_url(self, project: RemoteProject, branch_name: str, timeout: int = 10) -> str | None:
+        open_mr = self.mr_handler.get_open_merge_request(project, branch_name)
+        if not open_mr:
+            return None
+        return open_mr.web_url
+
     def create_or_update_merge_request(
         self,
         project: RemoteProject,

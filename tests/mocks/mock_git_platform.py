@@ -51,3 +51,6 @@ class MockGitPlatform(GitPlatformInterface):
         title: str = "Splat Dependency Updates",
     ) -> MergeRequest:
         return MergeRequest(title, "url", "project_url", "project_name", self.merge_request_type)
+
+    def get_open_merge_request_url(self, project: RemoteProject, branch_name: str, timeout: int = 10) -> str | None:
+        return ""

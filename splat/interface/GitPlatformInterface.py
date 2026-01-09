@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-
-from git import Optional
+from typing import Optional
 
 from splat.config.model import PlatformConfig
 from splat.model import AuditReport, MergeRequest, RemoteProject
@@ -46,6 +45,11 @@ class GitPlatformInterface(ABC):
 
     @abstractmethod
     def fetch_projects(self, project_id: Optional[str] = None, timeout: float = 60.0) -> list[RemoteProject]:
+        pass
+
+    @abstractmethod
+    def get_open_merge_request_url(self, project: RemoteProject, branch_name: str) -> str | None:
+        """Return an open MR/PR for the branch (or title) if it exists."""
         pass
 
     @abstractmethod
