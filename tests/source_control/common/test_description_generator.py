@@ -28,7 +28,7 @@ class TestDescriptionGenerator(BaseSourceControlTest):
             "</details>\n\n"
         )
 
-        result = self.generator.generate_commit_messages_description(self.commit_messages)
+        result = self.generator._generate_commit_messages_description(self.commit_messages)
         self.assertEqual(result, expected_description)
 
     def test_generate_remaining_vulns_description(self) -> None:
@@ -63,7 +63,7 @@ class TestDescriptionGenerator(BaseSourceControlTest):
             "</details>\n\n"
         )
 
-        result = self.generator.generate_remaining_vulns_description(self.remaining_vulns)
+        result = self.generator._generate_remaining_vulns_description(self.remaining_vulns)
         self.assertEqual(result, expected_description)
 
     def test_generate_commit_messages_description_handles_empty_commit_list(
@@ -72,7 +72,7 @@ class TestDescriptionGenerator(BaseSourceControlTest):
         commit_messages: list[str] = []
         expected_description = ""
 
-        result = self.generator.generate_commit_messages_description(commit_messages)
+        result = self.generator._generate_commit_messages_description(commit_messages)
         self.assertEqual(result, expected_description)
 
     def test_generate_remaining_vulns_description_handles_no_vulnerabilities(
@@ -81,5 +81,5 @@ class TestDescriptionGenerator(BaseSourceControlTest):
         remaining_vulns: list[AuditReport] = []
         expected_description = ""
 
-        result = self.generator.generate_remaining_vulns_description(remaining_vulns)
+        result = self.generator._generate_remaining_vulns_description(remaining_vulns)
         self.assertEqual(result, expected_description)
