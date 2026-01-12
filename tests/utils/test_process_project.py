@@ -21,7 +21,7 @@ from splat.model import (
 from splat.package_managers.yarn.YarnPackageManager import YarnPackageManager
 from splat.utils.command_runner.interface import CommandResult
 from splat.utils.project_processor.single_project import process_remote_project
-from tests.mocks import MockCommandRunner, MockFileSystem, MockGitPlatform, MockLogger
+from tests.mocks import MockCommandRunner, MockFileSystem, MockGitClient, MockGitPlatform, MockLogger
 
 
 class TestProcessProjectIntegration(unittest.TestCase):
@@ -39,26 +39,16 @@ class TestProcessProjectIntegration(unittest.TestCase):
         self.project.path = Path("/mock/path/project1/")
         self.lockfile = Lockfile(path=Path("/mock/path/project1/yarn.lock"), relative_path=Path("yarn.lock"))
 
-    @patch("splat.utils.project_processor.project_operations.checkout_branch")
-    @patch("splat.utils.project_processor.single_project.load_project_config", return_value=None)
-    @patch.object(PackageManagerInterface, "find_lockfiles")
-    @patch("splat.utils.project_processor.audit_fixer.Repo")
-    @patch("splat.utils.project_processor.audit_fixer.commit_changes")
-    @patch("splat.utils.project_processor.project_operations.push_changes")
-    @patch("splat.utils.project_processor.audit_fixer.discard_files_changes")
-    @patch("splat.utils.project_processor.single_project.clean_up_project_dir")
     @patch("splat.utils.project_processor.single_project.get_logfile_url")
+    @patch("splat.utils.project_processor.single_project.shutil.rmtree")
+    @patch.object(PackageManagerInterface, "find_lockfiles")
+    @patch("splat.utils.project_processor.single_project.load_project_config", return_value=None)
     def test_process_project_with_vulnerabilities(
         self,
-        mock_get_logfile_url: MagicMock,
-        mock_clean_up_project_dir: MagicMock,
-        mock_discard_changes: MagicMock,
-        mock_push_changes: MagicMock,
-        mock_commit_changes: MagicMock,
-        mock_repo: MagicMock,
-        mock_find_lockfiles: MagicMock,
         _: MagicMock,
-        mock_checkout_branch: MagicMock,
+        mock_find_lockfiles: MagicMock,
+        mock_rmtree: MagicMock,
+        mock_get_logfile_url: MagicMock,
     ) -> None:
         global_config = Config()
         yarn_manager = YarnPackageManager(
@@ -70,8 +60,7 @@ class TestProcessProjectIntegration(unittest.TestCase):
         # Mock find_lockfiles to return one lockfile
         mock_find_lockfiles.return_value = [self.lockfile]
 
-        mock_git_repo = MagicMock()
-        mock_repo.return_value = mock_git_repo
+        git_client = MockGitClient(repo_path=self.project.path)
 
         # Mock audit command: One fixable vulnerability, one non-fixable
         with open("tests/utils/mock_audit_output.json") as file:
@@ -99,27 +88,8 @@ class TestProcessProjectIntegration(unittest.TestCase):
         )
 
         mock_get_logfile_url.return_value = None
-        mock_commit_changes.return_value = (
-            "fix: Security [moderate 🟠]: Update package1 from 1.0.0 to 2.0.0 in yarn.lock\n\n"
-            "This update addresses the following vulnerabilities:\n\n- Some vulnerability description here\n"
-            "  - Aliases: CVE-2\n  - Recommendation: Upgrade to version 2.0.0 or later\n\n"
-        )
 
         # Expected
-        expected_audit_report = AuditReport(
-            dep=Dependency(name="package1", version="1.0.0", type=DependencyType.DIRECT, parent_deps=[]),
-            severity=Severity.MODERATE,
-            fixed_version="2.0.0",
-            vuln_details=[
-                VulnerabilityDetail(
-                    id="1",
-                    description="Some vulnerability description here",
-                    recommendation=["Upgrade to version 2.0.0 or later"],
-                    aliases=["CVE-2"],
-                )
-            ],
-            lockfile=self.lockfile,
-        )
         expected_files_to_commit = ["/mock/path/project1/yarn.lock", "/mock/path/project1/package.json"]
         expected_remaining_vulns = [
             AuditReport(
@@ -155,16 +125,18 @@ class TestProcessProjectIntegration(unittest.TestCase):
             git_platform=mock_git_platform,  # Mock Git platform for this test
             notification_sinks=[mock_notification_sink],  # Mock notification sinks
             global_config=global_config,
+            git_client=git_client,
         )
 
         # Assertions
 
         self.assertEqual(summary_result, expected_project_summary)
 
+        branch_name = global_config.general.git.branch_name
+
         # Assert checks out branch
-        mock_checkout_branch.assert_called_once_with(
-            repo_path=self.project.path, branch_name=global_config.general.git.branch_name, is_local_project=False
-        )
+        self.assertIn(branch_name, git_client.local_branches)
+        self.assertEqual(git_client.current_branch, branch_name)
 
         # Assert Finds lockfiles
         mock_find_lockfiles.assert_called_once_with(self.project)
@@ -172,30 +144,34 @@ class TestProcessProjectIntegration(unittest.TestCase):
         # Assert yarn install command
         self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/bin/yarn", args=["install"]))
 
-        # Assert audit command: called 2 times, audit and a re audit
+        # Assert audit command: called 2 times, audit and re-audit
         self.assertEqual(self.mock_command_runner.call_count("/usr/bin/yarn", ["audit", "--json"]), 2)
 
         # assert update command is called twice, one success, one failure
         self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/bin/yarn", args=["upgrade", "package1@2.0.0"]))
 
         # Assert commit changes: only one commit
-        mock_commit_changes.assert_called_once_with(mock_git_repo, expected_files_to_commit, expected_audit_report)
-        mock_discard_changes.assert_called_once_with(repo_path=self.project.path)
+        self.assertEqual(len(git_client.commit_calls), 1)
+        committed_files, commit_message = git_client.commit_calls[0]
+        self.assertCountEqual(committed_files, expected_files_to_commit)
+        self.assertIn("Security", commit_message)
+        self.assertIn("package1", commit_message)
 
         # Assert push changes
-        mock_push_changes.assert_called_once_with(
-            repo_path=self.project.path, branch_name=global_config.general.git.branch_name
-        )
+        self.assertEqual(git_client.push_calls, [branch_name])
+
+        self.assertEqual(len(git_client.discard_calls), 1)
+        self.assertIsNone(git_client.discard_calls[0])
 
         # Assert sends notification
         mock_notification_sink.send_merge_request_notification.assert_called_once_with(
             merge_request=MergeRequest("Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock"),
-            commit_messages=[mock_commit_changes.return_value],
+            commit_messages=[commit_message],
             remaining_vulns=expected_remaining_vulns,
         )
 
-        # Assert cleans up the project
-        mock_clean_up_project_dir.assert_called_once_with(self.project.path)
+        # Assert cleans up the project directory via shutil.rmtree
+        mock_rmtree.assert_called_once_with(self.project.path)
 
 
 if __name__ == "__main__":

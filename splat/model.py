@@ -27,7 +27,7 @@ class LocalProject(Project):
 
 @dataclass
 class ProjectAuditFixResult:
-    severity_score: Optional[Severity]
+    severity_score: Severity
     commit_messages: list[str]
     remaining_vulns: list[AuditReport]
     status_report: StatusReport

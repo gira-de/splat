@@ -11,7 +11,6 @@ from splat.utils.command_runner.real_runner import SubprocessCommandRunner
 from splat.utils.env_manager.interface import EnvManager
 from splat.utils.env_manager.os import OsEnvManager
 from splat.utils.fs import FileSystemInterface, RealFileSystem
-from splat.utils.git_operations import is_git_ignored
 from splat.utils.logger_config import default_logger
 from splat.utils.logging_utils import log_found_lockfiles
 
@@ -71,13 +70,14 @@ class PackageManagerInterface(ABC):
         pass
 
     def find_lockfiles(self, project: Project) -> list[Lockfile]:
+        # TODO: use FileSystemInterface (self.fs.glob) instead of Path.rglob
+        #       so this can be tested via the filesystem abstraction.
         found_lockfiles = [
             Lockfile(
                 path=lockfile,
                 relative_path=Path("/") / lockfile.relative_to(project.path),
             )
             for lockfile in project.path.rglob(self.lockfile_name)
-            if is_git_ignored(str(lockfile), project.path) is False
         ]
         log_found_lockfiles(self.name, project.name_with_namespace, found_lockfiles)
 
