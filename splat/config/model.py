@@ -32,6 +32,8 @@ class GitConfig(BaseModel):
         description="Base directory for cloned repositories",
     )
     branch_name: str = Field(default="splat")
+    author_name: str | None = Field(default=None)
+    author_email: str | None = Field(default=None)
 
 
 class DebugConfig(BaseModel):

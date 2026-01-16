@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from splat.config.model import SinkConfig
 from splat.model import AuditReport, MergeRequest, RemoteProject
@@ -31,9 +30,18 @@ class NotificationSinksInterface(ABC):
     def send_failure_notification(
         self,
         error_details: str,
-        project: Optional[RemoteProject],
+        project: RemoteProject | None,
         context: str,
-        dep_vuln_report: Optional[AuditReport] = None,
-        logfile_url: Optional[str] = None,
+        dep_vuln_report: AuditReport | None = None,
+        logfile_url: str | None = None,
     ) -> None:
+        pass
+
+    @abstractmethod
+    def send_project_skipped_notification(
+        self, project: RemoteProject, reason: str, logfile_url: str | None = None
+    ) -> None:
+        """
+        Notify that the project processing was skipped/aborted for a given reason (e.g. manual changes on the branch).
+        """
         pass

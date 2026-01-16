@@ -30,3 +30,8 @@ class ProjectNotifier:
                 commit_messages=commit_messages,
                 remaining_vulns=remaining_vulns,
             )
+
+    def notify_project_skipped(self, reason: str, logfile_url: str | None = None) -> None:
+        for sink in self.notification_sinks:
+            logger.update_context(f"splat -> {self.project.name_with_namespace} -> {sink.type}")
+            sink.send_project_skipped_notification(project=self.project, reason=reason, logfile_url=logfile_url)

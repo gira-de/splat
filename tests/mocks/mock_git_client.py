@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from splat.git.interface import GitClientInterface
+from splat.config.model import GitConfig
+from splat.git.interface import GitClientInterface, GitCommitAuthor
 
 
 class MockGitClient(GitClientInterface):
@@ -46,5 +47,14 @@ class MockGitClient(GitClientInterface):
     def pull(self, branch_name: str) -> None:
         return None
 
-    def push(self, branch_name: str) -> None:
+    def push(self, branch_name: str, force: bool = False) -> None:
         self.push_calls.append(branch_name)
+
+    def configure_identity(self, git_cfg: GitConfig) -> None:
+        return None
+
+    def get_commit_authors_between(self, base_ref: str, branch_ref: str) -> list[GitCommitAuthor]:
+        return []
+
+    def reset_branch_to_ref(self, branch: str, base_ref: str) -> None:
+        return None
