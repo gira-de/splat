@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import MagicMock, patch
 
 from splat.config.model import FiltersConfig
 from splat.source_control.common.description_generator import DescriptionGenerator
@@ -18,8 +17,7 @@ class TestGithubPlatformInitialization(unittest.TestCase):
             "X-GitHub-Api-Version": "2022-11-28",
         }
 
-    @patch("splat.source_control.github.GithubPlatform.GithubPRHandler")
-    def test_github_platform_initialization(self, mock_github_pr_handler: MagicMock) -> None:
+    def test_github_platform_initialization(self) -> None:
         mock_env_manager = MockEnvManager()
         mock_logger = MockLogger()
         mock_env_manager.set("https://github.com", "https://github.com")
@@ -47,7 +45,8 @@ class TestGithubPlatformInitialization(unittest.TestCase):
         self.assertIsInstance(github_platform.description_generator, DescriptionGenerator)
         self.assertIsInstance(github_platform.description_updater, DescriptionUpdater)
 
-        mock_github_pr_handler.assert_called_once_with(github_platform.api, mock_logger)
+        self.assertIs(github_platform.pr_handler.api, github_platform.api)
+        self.assertIs(github_platform.pr_handler.logger, mock_logger)
 
     def test_github_platform_initialization_with_custom_domain(self) -> None:
         platform = GithubPlatform(
