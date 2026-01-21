@@ -1,5 +1,3 @@
-import json
-
 from pydantic import ValidationError
 
 from splat.model import RemoteProject
@@ -7,34 +5,25 @@ from tests.source_control.github.base_test import BaseGithubSourceControlTest
 
 
 class TestGithubFetchProjects(BaseGithubSourceControlTest):
-    def test_github_authentication_fails_raises_error(self) -> None:
-        self.mock_api.get_request.side_effect = ValueError(
-            "Authentication failed. Please check your GitHub credentials."
-        )
-        with self.assertRaises(ValueError):
-            self.github_platform.fetch_projects()
-
     def test_github_api_call_succeeds_returns_a_list_of_found_projects(self) -> None:
-        self.mock_api.get_request.side_effect = [
-            json.dumps(
-                [  # First page
-                    {
-                        "id": 123,
-                        "full_name": "group/project1",
-                        "clone_url": "https://github.com/octocat/project1.git",
-                        "html_url": "https://github.com/octocat/project1",
-                        "default_branch": "master",
-                    },
-                    {
-                        "id": 456,
-                        "full_name": "group/project2",
-                        "clone_url": "https://github.com/octocat/project2.git",
-                        "html_url": "https://github.com/octocat/project2",
-                        "default_branch": "master",
-                    },
-                ]
-            ),
-            json.dumps([]),  # Second page (empty indicating no more data)
+        self.mock_api._get_request_responses = [
+            [  # First page
+                {
+                    "id": 123,
+                    "full_name": "group/project1",
+                    "clone_url": "https://github.com/octocat/project1.git",
+                    "html_url": "https://github.com/octocat/project1",
+                    "default_branch": "master",
+                },
+                {
+                    "id": 456,
+                    "full_name": "group/project2",
+                    "clone_url": "https://github.com/octocat/project2.git",
+                    "html_url": "https://github.com/octocat/project2",
+                    "default_branch": "master",
+                },
+            ],
+            [],  # Second page (empty indicating no more data)
         ]
 
         expected_projects = [
@@ -59,9 +48,9 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
         self.assertTrue(self.mock_logger.has_logged("Fetching all accessible projects"))
 
     def test_github_api_call_handles_unexpected_response_structure(self) -> None:
-        self.mock_api.get_request.side_effect = [
-            json.dumps([{"unexpected_field": "unexpected_value"}]),
-            json.dumps([]),
+        self.mock_api._get_request_responses = [
+            [{"unexpected_field": "unexpected_value"}],
+            [],
         ]
 
         expected_pydantic_logs = [
@@ -81,8 +70,7 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
         self.assertTrue(self.mock_logger.has_logged(expected_pydantic_logs))
 
     def test_github_fetch_projects_handles_invalid_api_response(self) -> None:
-        self.mock_api.get_request.side_effect = ValueError("Invalid JSON")
+        self.mock_api._get_request_error = ValueError("Invalid JSON")
 
         with self.assertRaises(ValueError):
-            projects = self.github_platform.fetch_projects()
-            self.assertEqual(projects, [])
+            self.github_platform.fetch_projects()
