@@ -64,7 +64,10 @@ class UvPackageManager(PackageManagerInterface):
                 )
 
             pyproject_file_path = vuln_report.lockfile.path.parent / self.manifest_file_name
-            files_to_commit: list[str] = [str(vuln_report.lockfile.path)]
+            files_to_commit: list[str] = [
+                str(vuln_report.lockfile.path),
+                str(pyproject_file_path),
+            ]
 
             if vuln_report.dep.type == DependencyType.TRANSITIVE:
                 self.logger.info(f"Updating sub-dependency: {init_log_msg}")
@@ -83,7 +86,6 @@ class UvPackageManager(PackageManagerInterface):
                     cwd=vuln_report.lockfile.path.parent,
                     is_dev=vuln_report.dep.is_dev,
                 )
-                files_to_commit.append(str(pyproject_file_path))
                 self.logger.info(f"Successfully updated dependency: {init_log_msg}")
             return files_to_commit
         except RuntimeError as e:

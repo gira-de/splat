@@ -34,7 +34,13 @@ class TestUvUpdate(BasePackageManagerTest):
 
         files_to_commit = self.uv_manager.update(vuln_report)
 
-        self.assertEqual(files_to_commit, [str(vuln_report.lockfile.path)])
+        self.assertEqual(
+            files_to_commit,
+            [
+                str(vuln_report.lockfile.path),
+                str(vuln_report.lockfile.path.parent / self.uv_manager.manifest_file_name),
+            ],
+        )
         self.assertTrue(
             self.mock_command_runner.has_called(
                 cmd="/usr/local/bin/uv",
