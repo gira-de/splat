@@ -69,9 +69,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
 # === yarn ===
-RUN npm install -g corepack \
-    && corepack enable \
-    && corepack prepare yarn@stable --activate
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+ENV CI=true
+RUN npm install -g corepack && \
+    corepack enable yarn
 
 # === Splat deps install globally ===
 WORKDIR /splat/
