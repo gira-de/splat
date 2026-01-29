@@ -5,7 +5,8 @@ from pathlib import Path
 from git.exc import GitCommandError
 from git.repo import Repo
 
-from splat.git.interface import GitClientInterface
+from splat.config.model import GitConfig
+from splat.git.interface import DEFAULT_GIT_AUTHOR_EMAIL, DEFAULT_GIT_AUTHOR_NAME, GitClientInterface, GitCommitAuthor
 from splat.interface.logger import LoggerInterface
 from splat.utils.errors import GitOperationError
 from splat.utils.logger_config import default_logger
@@ -135,11 +136,12 @@ class GitPythonClient(GitClientInterface):
         except GitCommandError as e:
             raise GitOperationError(f"Failed to pull branch '{branch}' for repository '{self.working_dir}'", e)
 
-    def push(self, branch: str) -> None:
-        self.logger.debug(f"Pushing changes in {self.working_dir} for branch {branch}")
+    def push(self, branch: str, force: bool = False) -> None:
+        action = "Force-pushing" if force else "Pushing"
+        self.logger.debug(f"{action} changes in {self.working_dir} for branch {branch}")
         try:
             remote = self._repo.remote()  # origin by default
-            push_info = remote.push(refspec=f"{branch}:{branch}")
+            push_info = remote.push(refspec=f"{branch}:{branch}", force=force)
 
             errors = [info.summary for info in push_info if info.flags & info.ERROR]
             if errors:
@@ -147,8 +149,46 @@ class GitPythonClient(GitClientInterface):
                     f"Push failed for branch '{branch}' in '{self.working_dir}': " + "; ".join(errors),
                     RuntimeError("; ".join(errors)),
                 )
-
             for info in push_info:
                 self.logger.info(f"Pushed {info.local_ref} to {info.remote_ref}")
         except GitCommandError as e:
             raise GitOperationError("An error occurred while pushing changes", e)
+
+    def configure_identity(self, git_cfg: GitConfig) -> None:
+        author_name = git_cfg.author_name or DEFAULT_GIT_AUTHOR_NAME
+        author_email = git_cfg.author_email or DEFAULT_GIT_AUTHOR_EMAIL
+
+        if git_cfg.author_email and git_cfg.author_name is None:
+            self.logger.debug(
+                f"Git author email provided without a name for {self.working_dir}. "
+                f"Using default author name '{DEFAULT_GIT_AUTHOR_NAME}'."
+            )
+        elif git_cfg.author_email is None:
+            self.logger.debug(
+                f"No git author identity provided for {self.working_dir}. "
+                f"Using defaults {author_name} <{author_email}>."
+            )
+
+        try:
+            with self._repo.config_writer() as config_writer:
+                config_writer.set_value("user", "name", author_name)
+                config_writer.set_value("user", "email", author_email)
+            self.logger.info(f"Configured git author identity for {self.working_dir}: {author_name} <{author_email}>")
+        except Exception as e:
+            self.logger.error(f"Failed to configure git author identity for {self.working_dir}: {e}")
+            raise GitOperationError("Failed to configure git author identity", e)
+
+    def get_commit_authors_between(self, base_ref: str, branch_ref: str) -> list[GitCommitAuthor]:
+        return [
+            GitCommitAuthor(name=commit.author.name or "", email=commit.author.email or "")
+            for commit in self._repo.iter_commits(f"{base_ref}..{branch_ref}")
+        ]
+
+    def reset_branch_to_ref(self, branch: str, base_ref: str) -> None:
+        try:
+            self._repo.git.reset("--hard", base_ref)
+            self.logger.info(f"Branch '{branch}' reset to {base_ref} for project '{self.working_dir.name}'.")
+        except GitCommandError as e:
+            raise GitOperationError(
+                f"Failed to reset branch '{branch}' to {base_ref} for project '{self.working_dir}'", e
+            )

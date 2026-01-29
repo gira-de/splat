@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Union
 
 # Define a recursive JSON type
-JSON = Union[str, int, float, bool, None, Dict[str, "JSON"], List["JSON"]]
+JSON = str | int | float | bool | None | dict[str, "JSON"] | list["JSON"]
 
 
 class APIClient(ABC):
@@ -12,12 +13,12 @@ class APIClient(ABC):
         self.timeout = timeout
 
     @abstractmethod
-    def get_json(self, endpoint: str, params: Optional[Dict[str, str]] = None) -> JSON:
+    def get_json(self, endpoint: str, params: dict[str, str] | None = None) -> JSON:
         """Makes a GET request and returns JSON data."""
         pass
 
     @abstractmethod
-    def get_bytes(self, endpoint: str, params: Optional[Dict[str, str]] = None) -> bytes:
+    def get_bytes(self, endpoint: str, params: dict[str, str] | None = None) -> bytes:
         """Makes a GET request and returns binary data."""
         pass
 

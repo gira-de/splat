@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from pydantic import ValidationError
 
 from splat.config.model import PlatformConfig
+from splat.interface.APIClient import JSON
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
@@ -27,6 +27,7 @@ class GithubPlatform(GitPlatformInterface):
         config: GitHubConfig,
         logger: Optional[LoggerInterface] = None,
         env_manager: Optional[EnvManager] = None,
+        api: Optional[GitHubAPI] = None,
     ) -> None:
         super().__init__(config)
         self.logger = logger or default_logger
@@ -35,7 +36,7 @@ class GithubPlatform(GitPlatformInterface):
         self._access_token = self.env_manager.resolve_value(config.access_token)
         self._name = config.name
         self.filters = config.filters
-        self.api = GitHubAPI(self.domain, self._access_token)
+        self.api = api or GitHubAPI(self.domain, self._access_token)
         self.description_generator = DescriptionGenerator()
         self.description_updater = DescriptionUpdater()
         self.pr_handler = GithubPRHandler(self.api, self.logger)
@@ -91,9 +92,9 @@ class GithubPlatform(GitPlatformInterface):
         if project_id:
             self.logger.info(f"Fetching specific project with ID '{project_id}'...")
             endpoint = f"/repositories/{project_id}"
-            response_str = self.api.get_request(endpoint)
-            if response_str:
-                project_data = json.loads(response_str)
+            response = self.api.get_json(endpoint)
+            if response:
+                project_data = cast(dict[str, JSON], response)
                 project = self._validate_and_create_remote_project_model(project_data)
                 if project is None:
                     return []
@@ -105,12 +106,12 @@ class GithubPlatform(GitPlatformInterface):
         page = 1
         while True:
             endpoint = f"/user/repos?page={page}&per_page=100"
-            response_str = self.api.get_request(endpoint)
-            if not response_str:
+            response = self.api.get_json(endpoint)
+            if not response:
                 break
 
             try:
-                page_content = json.loads(response_str)
+                page_content = cast(list[dict[str, JSON]], response)
             except ValueError as e:
                 self.logger.error(f"Failed to decode JSON response from GitHub API: {e}")
                 break
@@ -154,7 +155,7 @@ class GithubPlatform(GitPlatformInterface):
             else:
                 draft = False
 
-            matching_pr = self.pr_handler.find_matching_pr(project, title, timeout)
+            matching_pr = self.pr_handler.find_open_pr(project, branch_name, timeout)
 
             if matching_pr and matching_pr.body:
                 new_pr_description = self.description_updater.update_existing_description(

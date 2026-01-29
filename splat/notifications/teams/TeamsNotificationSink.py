@@ -44,6 +44,9 @@ class TeamsNotificationSink(NotificationSinksInterface):
         self.update_failure_webhook_url = (
             self.env_manager.resolve_value(config.update_failure.webhook_url) if config.update_failure else None
         )
+        self.abort_project_webhook_url = (
+            self.env_manager.resolve_value(config.project_skipped.webhook_url) if config.project_skipped else None
+        )
         self.error_webhook_url = self.env_manager.resolve_value(config.error.webhook_url) if config.error else None
         self.notification_size_limit = post_size_limit
 
@@ -160,3 +163,23 @@ class TeamsNotificationSink(NotificationSinksInterface):
         )
         webhook_url = self.mr_webhook_url or self.general_webhook_url
         self._send_notification(webhook_url, [failure_notification_content])
+
+    def send_project_skipped_notification(
+        self, project: RemoteProject, reason: str, logfile_url: str | None = None
+    ) -> None:
+        self.logger.debug(f"Sending project processing aborted notification for: {project.name_with_namespace}")
+        title = f"{project.name_with_namespace} skipped"
+        subtitle = "Project processing was skipped."
+        prj_url_txt = f"For [{project.name_with_namespace}]({project.web_url})"
+        notif_content = [
+            TeamsPayloadContentBodyElement(type="TextBlock", text=title, weight="bolder", size="extraLarge"),
+            TeamsPayloadContentBodyElement(type="TextBlock", text=subtitle, weight="bolder", color="Warning"),
+            TeamsPayloadContentBodyElement(type="TextBlock", text=prj_url_txt, wrap=True),
+            TeamsPayloadContentBodyElement(type="TextBlock", text=f"Reason: {reason}", wrap=True),
+        ]
+        if logfile_url:
+            notif_content.append(
+                TeamsPayloadContentBodyElement(type="TextBlock", text=f"[View logs]({logfile_url})", wrap=True)
+            )
+        webhook_url = self.abort_project_webhook_url or self.general_webhook_url
+        self._send_notification(webhook_url, [notif_content])
