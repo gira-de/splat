@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 
 @dataclass
@@ -54,10 +54,10 @@ class ProjectSummary:
     project_name: str
     time_stamp: str
     project_url: str
-    status_report: Optional[str]
-    severity_score: Optional[str]
-    mr_url: Optional[str]
-    logfile_url: Optional[str]
+    status_report: str | None
+    severity_score: str | None
+    mr_url: str | None
+    logfile_url: str | None
 
 
 class Lockfile(NamedTuple):
@@ -82,9 +82,9 @@ class DependencyType(Enum):
 class Dependency:
     name: str
     type: DependencyType
-    version: Optional[str] = field(default=None)
+    version: str | None = field(default=None)
     is_dev: bool = field(default=False)
-    parent_deps: Optional[list[Dependency]] = field(default_factory=list)
+    parent_deps: list[Dependency] | None = field(default_factory=list)
 
 
 @dataclass

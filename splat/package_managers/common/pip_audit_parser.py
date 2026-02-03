@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import ValidationError
 
 from splat.interface.logger import LoggerInterface
@@ -9,7 +7,7 @@ from splat.utils.logging_utils import log_pydantic_validation_error
 
 
 def parse_pip_audit_output(
-    pip_audit_output: str, direct_deps: list[Dependency], lockfile: Lockfile, logger: Optional[LoggerInterface] = None
+    pip_audit_output: str, direct_deps: list[Dependency], lockfile: Lockfile, logger: LoggerInterface | None = None
 ) -> list[AuditReport]:
     """
     parses the pip-audit output, returns a list of AuditReport instances, each containing details

@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 
 from pydantic import ValidationError
 
@@ -23,7 +23,7 @@ def get_git_platform_class(platform_type: str) -> type[GitPlatformInterface]:
 
 
 def initialize_git_platforms(
-    platforms_configs: list[PlatformConfig], platform_id: Optional[str] = None
+    platforms_configs: list[PlatformConfig], platform_id: str | None = None
 ) -> list[GitPlatformInterface]:
     initiated_git_platforms: list[GitPlatformInterface] = []
     formatted_names: list[str] = []
@@ -65,7 +65,6 @@ def initialize_git_platforms(
     if len(initiated_git_platforms) == 0:
         raise SourceControlsConfigurationError(config_errors)
     logger.info(
-        f"Configured {len(initiated_git_platforms)} source control platforms:"
-        f"{', '.join(fn for fn in formatted_names)}"
+        f"Configured {len(initiated_git_platforms)} source control platforms:{', '.join(fn for fn in formatted_names)}"
     )
     return initiated_git_platforms

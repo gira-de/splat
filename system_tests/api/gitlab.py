@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import quote
 
 import requests
@@ -7,7 +7,7 @@ from system_tests import GITLAB_API_URL, GITLAB_TOKEN
 
 
 class GitLabAPI:
-    def __init__(self, api_url: str = GITLAB_API_URL, token: Optional[str] = GITLAB_TOKEN) -> None:
+    def __init__(self, api_url: str = GITLAB_API_URL, token: str | None = GITLAB_TOKEN) -> None:
         self.api_url = api_url
         self.headers = {"PRIVATE-TOKEN": token}
 

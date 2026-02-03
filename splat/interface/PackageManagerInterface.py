@@ -1,7 +1,6 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
 
 from splat.config.model import PMConfig
 from splat.interface.logger import LoggerInterface
@@ -19,10 +18,10 @@ class PackageManagerInterface(ABC):
     def __init__(
         self,
         config: PMConfig,
-        command_runner: Optional[CommandRunner] = None,
-        fs: Optional[FileSystemInterface] = None,
-        logger: Optional[LoggerInterface] = None,
-        env_manager: Optional[EnvManager] = None,
+        command_runner: CommandRunner | None = None,
+        fs: FileSystemInterface | None = None,
+        logger: LoggerInterface | None = None,
+        env_manager: EnvManager | None = None,
     ) -> None:
         self.config = config
         self.logger = logger or default_logger

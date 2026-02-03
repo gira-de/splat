@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from splat.config.model import PMConfig
 from splat.interface.logger import LoggerInterface
@@ -17,9 +16,9 @@ class UvPackageManager(PackageManagerInterface):
     def __init__(
         self,
         config: PMConfig,
-        command_runner: Optional[CommandRunner] = None,
-        fs: Optional[FileSystemInterface] = None,
-        logger: Optional[LoggerInterface] = None,
+        command_runner: CommandRunner | None = None,
+        fs: FileSystemInterface | None = None,
+        logger: LoggerInterface | None = None,
     ) -> None:
         super().__init__(config, command_runner, fs, logger)
         self.uv = UvCommandRunner(self.command_runner, self.logger)
@@ -54,8 +53,9 @@ class UvPackageManager(PackageManagerInterface):
         return parse_pip_audit_output(audit_ouput, direct_deps, lockfile)
 
     def update(self, vuln_report: AuditReport) -> list[str]:
-        init_log_msg = f"""{vuln_report.dep.name} from {vuln_report.dep.version} to {
-            vuln_report.fixed_version} in {vuln_report.lockfile.relative_path}"""
+        init_log_msg = f"""{vuln_report.dep.name} from {vuln_report.dep.version} to {vuln_report.fixed_version} in {
+            vuln_report.lockfile.relative_path
+        }"""
         try:
             if vuln_report.fixed_version is None:
                 raise RuntimeError(

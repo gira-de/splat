@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import requests
 
 from splat.config.model import SinkConfig
@@ -30,8 +28,8 @@ class TeamsNotificationSink(NotificationSinksInterface):
     def __init__(
         self,
         config: TeamsSinkConfig,
-        logger: Optional[LoggerInterface] = None,
-        env_manager: Optional[EnvManager] = None,
+        logger: LoggerInterface | None = None,
+        env_manager: EnvManager | None = None,
         post_size_limit: int = 20000,
     ) -> None:
         super().__init__(config)
@@ -137,10 +135,10 @@ class TeamsNotificationSink(NotificationSinksInterface):
     def send_failure_notification(
         self,
         error_details: str,
-        project: Optional[RemoteProject],
+        project: RemoteProject | None,
         context: str,
-        dep_vuln_report: Optional[AuditReport] = None,
-        logfile_url: Optional[str] = None,
+        dep_vuln_report: AuditReport | None = None,
+        logfile_url: str | None = None,
     ) -> None:
         self.logger.debug(
             f"Sending failure notification for context: {context} Failed, "

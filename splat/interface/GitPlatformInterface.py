@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from splat.config.model import PlatformConfig
 from splat.model import AuditReport, MergeRequest, RemoteProject
@@ -18,13 +17,13 @@ class GitPlatformInterface(ABC):
         pass
 
     @property
-    def id(self) -> Optional[str]:
+    def id(self) -> str | None:
         return self.config.id
 
     @property
     @abstractmethod
     def name(self) -> str:
-        """Name of the platform, Optional, used for logging"""
+        """Name of the platform, optional, used for logging"""
         pass
 
     @property
@@ -44,7 +43,7 @@ class GitPlatformInterface(ABC):
         pass
 
     @abstractmethod
-    def fetch_projects(self, project_id: Optional[str] = None, timeout: float = 60.0) -> list[RemoteProject]:
+    def fetch_projects(self, project_id: str | None = None, timeout: float = 60.0) -> list[RemoteProject]:
         pass
 
     @abstractmethod

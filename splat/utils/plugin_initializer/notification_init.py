@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Optional, cast
+from typing import cast
 
 from splat.config.model import NotificationSinksConfig
 from splat.interface.logger import LoggerInterface
@@ -21,7 +21,7 @@ def get_notification_sink_class(sink_type: str) -> type[NotificationSinksInterfa
 
 
 def initialize_notification_sinks(
-    notification_sinks_configs: NotificationSinksConfig, logger: Optional[LoggerInterface] = None
+    notification_sinks_configs: NotificationSinksConfig, logger: LoggerInterface | None = None
 ) -> list[NotificationSinksInterface]:
     """
     Initializes and returns a list of notification sink instances based on the provided configuration.

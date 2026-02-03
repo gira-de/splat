@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from pydantic import ValidationError
 
@@ -24,9 +24,9 @@ class GithubPlatform(GitPlatformInterface):
     def __init__(
         self,
         config: GitHubConfig,
-        logger: Optional[LoggerInterface] = None,
-        env_manager: Optional[EnvManager] = None,
-        api: Optional[GitHubAPI] = None,
+        logger: LoggerInterface | None = None,
+        env_manager: EnvManager | None = None,
+        api: GitHubAPI | None = None,
     ) -> None:
         super().__init__(config)
         self.logger = logger or default_logger
@@ -61,7 +61,7 @@ class GithubPlatform(GitPlatformInterface):
         validated_config = GitHubConfig.model_validate(config_dict)
         return cls(config=validated_config)
 
-    def _validate_and_create_remote_project_model(self, project_data: dict[str, Any]) -> Optional[RemoteProject]:
+    def _validate_and_create_remote_project_model(self, project_data: dict[str, Any]) -> RemoteProject | None:
         try:
             proj = GithubRepositoryEntry.model_validate(project_data)
         except ValidationError as e:
@@ -83,7 +83,7 @@ class GithubPlatform(GitPlatformInterface):
             default_branch=proj.default_branch,
         )
 
-    def fetch_projects(self, project_id: Optional[str] = None, timeout: float = 60) -> list[RemoteProject]:
+    def fetch_projects(self, project_id: str | None = None, timeout: float = 60) -> list[RemoteProject]:
         """Fetches a specific repository if project_id is provided, otherwise fetches all accessible projects."""
         projects: list[RemoteProject] = []
 

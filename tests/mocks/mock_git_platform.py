@@ -1,5 +1,3 @@
-from typing import Optional
-
 from splat.config.model import PlatformConfig
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
@@ -16,11 +14,11 @@ class MockGitPlatform(GitPlatformInterface):
         return "mock"
 
     @property
-    def id(self) -> Optional[str]:
+    def id(self) -> str | None:
         return self._id
 
     @id.setter
-    def id(self, value: Optional[str]) -> None:
+    def id(self, value: str | None) -> None:
         self._id = value if value is not None else ""
 
     @property
@@ -39,7 +37,7 @@ class MockGitPlatform(GitPlatformInterface):
     def from_platform_config(cls, platform_config: PlatformConfig) -> GitPlatformInterface:
         return MockGitPlatform(PlatformConfig(type="mock"), [])
 
-    def fetch_projects(self, project_id: Optional[str] = None, timeout: float = 60.0) -> list[RemoteProject]:
+    def fetch_projects(self, project_id: str | None = None, timeout: float = 60.0) -> list[RemoteProject]:
         return self.projects
 
     def create_or_update_merge_request(

@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, Tuple, Union
 
 from splat.interface.logger import LoggerInterface
 from splat.utils.command_runner.interface import CommandResult, CommandRunner
@@ -32,9 +32,9 @@ class MockCommandRunner(CommandRunner):
         cwd: Path,
         shell: bool = False,
         check: bool = True,
-        stdout: Optional[int] = None,
-        stderr: Optional[int] = None,
-        allowed_return_codes: Optional[list[int]] = None,
+        stdout: int | None = None,
+        stderr: int | None = None,
+        allowed_return_codes: list[int] | None = None,
     ) -> CommandResult:
         """Mocked execution of a command."""
         call = CommandCall(cmd=cmd, args=tuple(args), cwd=cwd, shell=False, check=check)
@@ -66,10 +66,10 @@ class MockCommandRunner(CommandRunner):
         else:
             self.responses[key].append(response)  # Add a single response
 
-    def has_called(self, cmd: str, args: Optional[List[str]] = None) -> bool:
+    def has_called(self, cmd: str, args: List[str] | None = None) -> bool:
         """Check if a command was executed at least once."""
         return any(call.cmd == cmd and (args is None or call.args == tuple(args)) for call in self.calls)
 
-    def call_count(self, cmd: str, args: Optional[List[str]] = None) -> int:
+    def call_count(self, cmd: str, args: List[str] | None = None) -> int:
         """Count occurrences of a command execution."""
         return sum(1 for call in self.calls if call.cmd == cmd and (args is None or call.args == tuple(args)))

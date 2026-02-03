@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 
 from splat.config.model import LocalPackageManagersConfig, PackageManagersConfig
 from splat.interface.logger import LoggerInterface
@@ -20,7 +20,7 @@ def get_pm_class(pm_name: str) -> type[PackageManagerInterface]:
 
 def initialize_package_managers(
     package_managers_config: PackageManagersConfig | LocalPackageManagersConfig,
-    logger: Optional[LoggerInterface] = None,
+    logger: LoggerInterface | None = None,
 ) -> list[PackageManagerInterface]:
     logger = logger or default_logger
     initiated_package_managers: list[PackageManagerInterface] = []

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from splat.config.model import (
     Config,
     GeneralConfig,
@@ -25,7 +23,7 @@ def merge_configs(
     local_config: LocalConfig,
     global_notification_sinks: list[NotificationSinksInterface],
     global_package_managers: list[PackageManagerInterface],
-    logger: Optional[LoggerInterface] = None,
+    logger: LoggerInterface | None = None,
 ) -> tuple[
     Config,
     list[NotificationSinksInterface],

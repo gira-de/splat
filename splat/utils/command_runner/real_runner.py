@@ -1,6 +1,5 @@
 import subprocess  # nosec
 from pathlib import Path
-from typing import Optional
 
 from splat.interface.logger import LoggerInterface
 from splat.utils.command_runner.interface import CommandResult, CommandRunner
@@ -13,7 +12,7 @@ CompletedProcess = subprocess.CompletedProcess
 
 
 class SubprocessCommandRunner(CommandRunner):
-    def __init__(self, logger: Optional[LoggerInterface] = None) -> None:
+    def __init__(self, logger: LoggerInterface | None = None) -> None:
         self.logger = logger or default_logger
         super().__init__(self.logger)
 
@@ -24,9 +23,9 @@ class SubprocessCommandRunner(CommandRunner):
         cwd: Path,
         shell: bool = False,
         check: bool = True,
-        stdout: Optional[int] = PIPE,
-        stderr: Optional[int] = PIPE,
-        allowed_return_codes: Optional[list[int]] = None,
+        stdout: int | None = PIPE,
+        stderr: int | None = PIPE,
+        allowed_return_codes: list[int] | None = None,
     ) -> CommandResult:
         if not is_command_whitelisted(cmd, args):
             raise RuntimeError(f"Command '{cmd} {' '.join(args)}' is not whitelisted.")

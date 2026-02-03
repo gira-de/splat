@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 import requests
 
@@ -21,9 +21,9 @@ class GitlabPlatform(GitPlatformInterface):
     def __init__(
         self,
         config: GitLabConfig,
-        logger: Optional[LoggerInterface] = None,
-        env_manager: Optional[EnvManager] = None,
-        api: Optional[GitLabAPI] = None,
+        logger: LoggerInterface | None = None,
+        env_manager: EnvManager | None = None,
+        api: GitLabAPI | None = None,
     ) -> None:
         super().__init__(config)
         self.logger = logger or default_logger
@@ -58,7 +58,7 @@ class GitlabPlatform(GitPlatformInterface):
         validated_config = GitLabConfig.model_validate(config_dict)
         return cls(config=validated_config)
 
-    def fetch_projects(self, project_id: Optional[str] = None, timeout: float = 60) -> List[RemoteProject]:
+    def fetch_projects(self, project_id: str | None = None, timeout: float = 60) -> List[RemoteProject]:
         if project_id:
             self.logger.info(f"Fetching project with ID '{project_id}'...")
             project = self.project_handler.fetch_project_with_id(project_id, timeout)

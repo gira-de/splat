@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from splat.config.model import PMConfig
 from splat.interface.logger import LoggerInterface
@@ -18,9 +17,9 @@ class PipenvPackageManager(PackageManagerInterface):
     def __init__(
         self,
         config: PMConfig,
-        command_runner: Optional[CommandRunner] = None,
-        fs: Optional[FileSystemInterface] = None,
-        logger: Optional[LoggerInterface] = None,
+        command_runner: CommandRunner | None = None,
+        fs: FileSystemInterface | None = None,
+        logger: LoggerInterface | None = None,
     ) -> None:
         super().__init__(config, command_runner, fs, logger)
         self.pipenv = PipenvCommandRunner(self.command_runner, self.fs, self.logger)

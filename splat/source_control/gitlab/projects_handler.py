@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, cast
 
 import requests
 from pydantic import ValidationError
@@ -17,7 +17,7 @@ class GitlabProjectHandler:
         self.api = api
         self.logger = logger
 
-    def _validate_and_create_remote_project_model(self, project_data: Dict[str, JSON]) -> Optional[RemoteProject]:
+    def _validate_and_create_remote_project_model(self, project_data: Dict[str, JSON]) -> RemoteProject | None:
         try:
             proj = GitLabRepositoryEntry.model_validate(project_data)
         except ValidationError as e:
@@ -38,7 +38,7 @@ class GitlabProjectHandler:
             proj.path_with_namespace, proj.id, proj.web_url, proj.http_url_to_repo, proj.default_branch
         )
 
-    def fetch_project_with_id(self, project_id: str, timeout: float = 60) -> Optional[RemoteProject]:
+    def fetch_project_with_id(self, project_id: str, timeout: float = 60) -> RemoteProject | None:
         self.logger.info(f"Fetching specific project with ID '{project_id}'...")
         endpoint = f"/projects/{project_id}"
         try:
