@@ -1,5 +1,3 @@
-from typing import Optional
-
 import toml
 import tomlkit
 
@@ -15,7 +13,7 @@ class PoetryPyprojectManager:
         self.fs = fs
         self.logger = logger
 
-    def get_required_python_version(self, pyproject_path: str) -> Optional[str]:
+    def get_required_python_version(self, pyproject_path: str) -> str | None:
         try:
             pyproject_content = toml.loads(self.fs.read(pyproject_path))
         except Exception as e:

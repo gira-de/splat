@@ -1,16 +1,15 @@
 import argparse
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
 class SplatArgs(BaseModel):
-    local_projects: Optional[list[Path]] = Field(default=None)
-    platform_id: Optional[str] = Field(default=None)
-    project_id: Optional[str] = Field(default=None)
-    gitlab_ci_fetch_summary: Optional[bool] = Field(default=False)
-    access_token_name: Optional[str] = Field(default=None)
+    local_projects: list[Path] | None = Field(default=None)
+    platform_id: str | None = Field(default=None)
+    project_id: str | None = Field(default=None)
+    gitlab_ci_fetch_summary: bool | None = Field(default=False)
+    access_token_name: str | None = Field(default=None)
 
 
 def parse_arguments() -> SplatArgs:

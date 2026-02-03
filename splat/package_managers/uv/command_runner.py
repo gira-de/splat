@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from splat.interface.logger import LoggerInterface
 from splat.utils.command_runner.interface import CommandRunner
@@ -34,7 +33,7 @@ class UvCommandRunner:
         )
         return result.stdout
 
-    def add(self, dep_name: str, dep_version: Optional[str], cwd: Path, is_dev: bool) -> None:
+    def add(self, dep_name: str, dep_version: str | None, cwd: Path, is_dev: bool) -> None:
         args = ["add"]
         if is_dev:
             args.append("--dev")

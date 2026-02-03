@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict
 
 import requests
 
@@ -20,7 +20,7 @@ class GitLabAPI(APIClient):
         endpoint = endpoint.lstrip("/")  # Remove any leading slash
         return f"{self.api_url}/{endpoint}"
 
-    def get_json(self, endpoint: str, params: Optional[Dict[str, str]] = None) -> JSON:
+    def get_json(self, endpoint: str, params: Dict[str, str] | None = None) -> JSON:
         """Performs a GET request and returns JSON data."""
         url: str = self._build_url(endpoint)
         response = self.session.get(url, headers=self.headers, params=params, timeout=self.timeout)
@@ -28,7 +28,7 @@ class GitLabAPI(APIClient):
         res_json: JSON = response.json()
         return res_json
 
-    def get_bytes(self, endpoint: str, params: Optional[Dict[str, str]] = None) -> bytes:
+    def get_bytes(self, endpoint: str, params: Dict[str, str] | None = None) -> bytes:
         """Performs a GET request and returns binary data."""
         url: str = self._build_url(endpoint)
         response = self.session.get(url, headers=self.headers, params=params, stream=True, timeout=self.timeout)

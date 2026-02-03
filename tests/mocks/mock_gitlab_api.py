@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, cast
 
 from splat.interface.APIClient import JSON
 from splat.source_control.gitlab.api import GitLabAPI
@@ -21,7 +21,7 @@ class MockGitLabAPI(GitLabAPI):
         self._post_json_response = post_json_response
         self._put_json_response = put_json_response
 
-    def get_json(self, endpoint: str, params: Optional[Dict[str, str]] = None) -> JSON:
+    def get_json(self, endpoint: str, params: Dict[str, str] | None = None) -> JSON:
         if params and "page" in params:  # pagination
             responses = cast(List[JSON], self._get_json_response)
             try:
@@ -31,7 +31,7 @@ class MockGitLabAPI(GitLabAPI):
                 return []
         return self._get_json_response
 
-    def get_bytes(self, endpoint: str, params: Optional[Dict[str, str]] = None) -> bytes:
+    def get_bytes(self, endpoint: str, params: Dict[str, str] | None = None) -> bytes:
         return self._get_bytes_response
 
     def post_json(self, endpoint: str, data: JSON) -> JSON:

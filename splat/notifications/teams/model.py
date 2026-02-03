@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from splat.config.model import SinkConfig
@@ -13,14 +11,14 @@ class TeamsPayloadContentBodyElementAction(BaseModel):
 
 class TeamsPayloadContentBodyElement(BaseModel):
     type: str
-    text: Optional[str] = None
-    weight: Optional[str] = None
-    size: Optional[str] = None
-    color: Optional[str] = None
-    wrap: Optional[bool] = None
-    id: Optional[str] = None
-    is_visible: Optional[bool] = Field(default=None, alias="isVisible")
-    actions: Optional[list[TeamsPayloadContentBodyElementAction]] = None
+    text: str | None = None
+    weight: str | None = None
+    size: str | None = None
+    color: str | None = None
+    wrap: bool | None = None
+    id: str | None = None
+    is_visible: bool | None = Field(default=None, alias="isVisible")
+    actions: list[TeamsPayloadContentBodyElementAction] | None = None
 
 
 class MSTeams(BaseModel):
@@ -64,7 +62,7 @@ class ErrorSinkConfig(BaseModel):
 
 class TeamsSinkConfig(SinkConfig):
     webhook_url: str
-    merge_request: Optional[MergeRequestSinkConfig] = None
-    update_failure: Optional[UpdateFailureSinkConfig] = None
-    project_skipped: Optional[ProjectSkippedSinkConfig] = None
-    error: Optional[ErrorSinkConfig] = None
+    merge_request: MergeRequestSinkConfig | None = None
+    update_failure: UpdateFailureSinkConfig | None = None
+    project_skipped: ProjectSkippedSinkConfig | None = None
+    error: ErrorSinkConfig | None = None

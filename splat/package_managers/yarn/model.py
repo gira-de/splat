@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -20,7 +18,7 @@ class YarnAuditEntryDataAdvisory(BaseModel, extra="allow"):
     vulnerable_versions: str
     cves: list[str]
     patched_versions: str
-    severity: Optional[str]
+    severity: str | None
 
 
 class YarnAuditEntryData(BaseModel):

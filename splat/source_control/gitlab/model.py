@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 from splat.config.model import PlatformConfig
@@ -15,7 +13,7 @@ class GitLabRepositoryEntry(BaseModel, extra="allow"):
     path_with_namespace: str
     http_url_to_repo: str
     web_url: str
-    default_branch: Optional[str]
+    default_branch: str | None
 
 
 class GitLabMergeRequestEntry(BaseModel, extra="allow"):
@@ -33,7 +31,7 @@ class GitLabDownstreamPipeline(BaseModel, extra="allow"):
 
 
 class GitLabPipelineBridge(BaseModel, extra="allow"):
-    downstream_pipeline: Optional[GitLabDownstreamPipeline]
+    downstream_pipeline: GitLabDownstreamPipeline | None
 
 
 class GitLabPipelineJob(BaseModel, extra="allow"):

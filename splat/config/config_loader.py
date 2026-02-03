@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, cast
+from typing import cast
 
 import yaml
 from pydantic import ValidationError
@@ -47,8 +47,8 @@ def validate_config(
 
 def load_config(
     config_path: Path = Path("splat.yaml"),
-    logger: Optional[LoggerInterface] = None,
-    fs: Optional[FileSystemInterface] = None,
+    logger: LoggerInterface | None = None,
+    fs: FileSystemInterface | None = None,
 ) -> Config:
     logger = logger or default_logger
     fs = fs or RealFileSystem()
@@ -66,8 +66,8 @@ def load_config(
 
 def load_project_config(
     config_path: Path,
-    logger: Optional[LoggerInterface] = None,
-    fs: Optional[FileSystemInterface] = None,
+    logger: LoggerInterface | None = None,
+    fs: FileSystemInterface | None = None,
 ) -> LocalConfig | None:
     logger = logger or default_logger
     fs = fs or RealFileSystem()

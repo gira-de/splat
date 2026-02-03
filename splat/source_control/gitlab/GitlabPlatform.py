@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 import requests
 
@@ -21,9 +21,9 @@ class GitlabPlatform(GitPlatformInterface):
     def __init__(
         self,
         config: GitLabConfig,
-        logger: Optional[LoggerInterface] = None,
-        env_manager: Optional[EnvManager] = None,
-        api: Optional[GitLabAPI] = None,
+        logger: LoggerInterface | None = None,
+        env_manager: EnvManager | None = None,
+        api: GitLabAPI | None = None,
     ) -> None:
         super().__init__(config)
         self.logger = logger or default_logger
@@ -58,13 +58,19 @@ class GitlabPlatform(GitPlatformInterface):
         validated_config = GitLabConfig.model_validate(config_dict)
         return cls(config=validated_config)
 
-    def fetch_projects(self, project_id: Optional[str] = None, timeout: float = 60) -> List[RemoteProject]:
+    def fetch_projects(self, project_id: str | None = None, timeout: float = 60) -> List[RemoteProject]:
         if project_id:
             self.logger.info(f"Fetching project with ID '{project_id}'...")
             project = self.project_handler.fetch_project_with_id(project_id, timeout)
             return [project] if project else []
         else:
             return self.project_handler.fetch_projects(timeout)
+
+    def get_open_merge_request_url(self, project: RemoteProject, branch_name: str, timeout: int = 10) -> str | None:
+        open_mr = self.mr_handler.get_open_merge_request(project, branch_name)
+        if not open_mr:
+            return None
+        return open_mr.web_url
 
     def create_or_update_merge_request(
         self,
@@ -78,7 +84,6 @@ class GitlabPlatform(GitPlatformInterface):
         try:
             open_mr = self.mr_handler.get_open_merge_request(project, branch_name)
             if open_mr:
-                self.logger.info(f"Found an open merge request in project {project.name_with_namespace}")
                 return self.mr_handler.update_existing_merge_request(
                     project, open_mr, mr_title, commit_messages, remaining_vulns
                 )

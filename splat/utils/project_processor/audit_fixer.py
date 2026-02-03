@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable, Generator, Optional
+from typing import Callable, Generator
 
 from splat.config.model import Config
 from splat.git.interface import GitClientInterface
@@ -23,8 +23,8 @@ def handle_project_errors(
     project: Project,
     context: str,
     status_report: list[StatusReport],
-    notify_callback: Optional[Callable[[str, Exception, Optional[AuditReport]], None]] = None,
-    report: Optional[AuditReport] = None,
+    notify_callback: Callable[[str, Exception, AuditReport | None], None] | None = None,
+    report: AuditReport | None = None,
     skip_loop: bool = True,
 ) -> Generator[None, None, None]:
     """
@@ -54,7 +54,7 @@ def audit_and_fix_project(
     package_managers: list[PackageManagerInterface],
     config: Config,
     git_client: GitClientInterface,
-    notify_callback: Optional[Callable[[str, Exception, Optional[AuditReport]], None]] = None,
+    notify_callback: Callable[[str, Exception, AuditReport | None], None] | None = None,
     logger: ContextLoggerAdapter = production_logger,
 ) -> ProjectAuditFixResult:
     commit_messages: list[str] = []
@@ -69,7 +69,7 @@ def audit_and_fix_project(
 
         for found_lockfile in found_lockfiles:
             try:
-                audit_reports: Optional[list[AuditReport]] = None
+                audit_reports: list[AuditReport] | None = None
 
                 # Install deps
                 with handle_project_errors(project, "Installing dependencies", status_report, notify_callback):
@@ -85,7 +85,7 @@ def audit_and_fix_project(
                     continue
 
                 for report in audit_reports:
-                    files_to_commit: Optional[list[str]] = None
+                    files_to_commit: list[str] | None = None
                     if highest_severity is None or report.severity.value > highest_severity.value:
                         highest_severity = report.severity
 
