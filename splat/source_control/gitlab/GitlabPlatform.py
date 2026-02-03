@@ -84,7 +84,6 @@ class GitlabPlatform(GitPlatformInterface):
         try:
             open_mr = self.mr_handler.get_open_merge_request(project, branch_name)
             if open_mr:
-                self.logger.info(f"Found an open merge request in project {project.name_with_namespace}")
                 return self.mr_handler.update_existing_merge_request(
                     project, open_mr, mr_title, commit_messages, remaining_vulns
                 )
