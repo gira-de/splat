@@ -1,6 +1,5 @@
 import base64
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 
 from splat.config.model import RepoConfig
@@ -28,9 +27,9 @@ class YarnRepoManager:
         repo_name: str,
         repo_url: str,
         cwd: Path,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        token: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        token: str | None = None,
     ) -> None:
         npmrc_file = cwd / ".npmrc"
         registry_auth_path = self._generate_registry_auth_path(repo_url)

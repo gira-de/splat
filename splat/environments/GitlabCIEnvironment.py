@@ -1,5 +1,3 @@
-from typing import Optional
-
 import yaml
 from pydantic import BaseModel, Field
 
@@ -29,9 +27,9 @@ class Rule(BaseModel):
 
 class Job(BaseModel):
     script: list[str]
-    needs: Optional[list[str]] = Field(default=None)
-    artifacts: Optional[Artifacts] = Field(default=None)
-    rules: Optional[list[Rule]] = Field(default=None)
+    needs: list[str] | None = Field(default=None)
+    artifacts: Artifacts | None = Field(default=None)
+    rules: list[Rule] | None = Field(default=None)
 
 
 class Default(BaseModel):

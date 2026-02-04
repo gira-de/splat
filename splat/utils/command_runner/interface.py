@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from splat.interface.logger import LoggerInterface
 
@@ -23,8 +23,8 @@ class CommandRunner(ABC):
         cwd: Path,
         shell: bool = False,
         check: bool = True,
-        stdout: Optional[int] = None,
-        stderr: Optional[int] = None,
-        allowed_return_codes: Optional[list[int]] = None,
+        stdout: int | None = None,
+        stderr: int | None = None,
+        allowed_return_codes: list[int] | None = None,
     ) -> CommandResult:
         pass

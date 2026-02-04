@@ -1,5 +1,3 @@
-from typing import Optional
-
 from splat.notifications.teams.model import TeamsPayloadContentBodyElement
 from splat.notifications.teams.utils import create_toggleable_text_block
 
@@ -7,10 +5,10 @@ from splat.notifications.teams.utils import create_toggleable_text_block
 def create_failure_notification_content(
     title: str,
     subtitle: str,
-    project_url: Optional[str],
+    project_url: str | None,
     error_summary: str,
     error_details: str,
-    logfile_url: Optional[str] = None,
+    logfile_url: str | None = None,
 ) -> list[TeamsPayloadContentBodyElement]:
     content: list[TeamsPayloadContentBodyElement] = [
         TeamsPayloadContentBodyElement(type="TextBlock", text=title, weight="bolder", size="extraLarge"),

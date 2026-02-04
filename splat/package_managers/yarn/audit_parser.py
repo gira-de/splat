@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import ValidationError
 
 from splat.interface.logger import LoggerInterface
@@ -27,7 +25,7 @@ def _get_severity_enum(severity_str: str) -> Severity:
 
 
 def parse_yarn_audit_output(
-    output: str, lockfile: Lockfile, logger: Optional[LoggerInterface] = None
+    output: str, lockfile: Lockfile, logger: LoggerInterface | None = None
 ) -> list[AuditReport]:
     """
     Parses the output from `yarn audit --json` and extracts information about each vulnerability,

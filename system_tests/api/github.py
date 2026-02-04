@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -6,7 +6,7 @@ from system_tests import GITHUB_API_URL, GITHUB_TOKEN
 
 
 class GitHubAPI:
-    def __init__(self, api_url: str = GITHUB_API_URL, token: Optional[str] = GITHUB_TOKEN) -> None:
+    def __init__(self, api_url: str = GITHUB_API_URL, token: str | None = GITHUB_TOKEN) -> None:
         self.api_url = api_url
         self.headers = {
             "Authorization": f"Bearer {token}",

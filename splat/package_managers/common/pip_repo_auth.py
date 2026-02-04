@@ -1,6 +1,5 @@
 import io
 from configparser import ConfigParser
-from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
 from splat.interface.logger import LoggerInterface
@@ -57,7 +56,7 @@ class PipRepoAuth:
         self.logger.debug(f"Updated pip config at {pip_config_file}: set extra-index-url to '{normalized}'.")
 
     def set_netrc(
-        self, repo_url: str, username: Optional[str] = None, password: Optional[str] = None, token: Optional[str] = None
+        self, repo_url: str, username: str | None = None, password: str | None = None, token: str | None = None
     ) -> None:
         """
         Update or create the ~/.netrc file with credentials for the specified machine or repository URL.
@@ -72,7 +71,7 @@ class PipRepoAuth:
         else:
             existing = []
 
-        def _build_credentials(token: Optional[str], username: Optional[str], password: Optional[str]) -> list[str]:
+        def _build_credentials(token: str | None, username: str | None, password: str | None) -> list[str]:
             if token:
                 return ["    login __token__", f"    password {token}"]
             if username and password:

@@ -1,4 +1,4 @@
-from typing import List, Optional, cast
+from typing import List, cast
 
 from pydantic import ValidationError
 
@@ -84,7 +84,7 @@ def download_artifact(
     logger.info(f"Artifact downloaded: {artifact_file}")
 
 
-def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: Optional[EnvManager] = None) -> None:
+def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: EnvManager | None = None) -> None:
     env_manager = env_manager or OsEnvManager(default_logger)
     ci_api_url = env_manager.get("CI_SERVER_URL")
     ci_project_id = env_manager.get("CI_PROJECT_ID")

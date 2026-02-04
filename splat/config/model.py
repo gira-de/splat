@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -32,6 +32,8 @@ class GitConfig(BaseModel):
         description="Base directory for cloned repositories",
     )
     branch_name: str = Field(default="splat")
+    author_name: str | None = Field(default=None)
+    author_email: str | None = Field(default=None)
 
 
 class DebugConfig(BaseModel):
@@ -57,7 +59,7 @@ class FiltersConfig(BaseModel):
 
 class PlatformConfig(BaseModelWithNoneReplacement, extra="allow"):
     type: str
-    id: Optional[str] = Field(default=None)
+    id: str | None = Field(default=None)
     name: str = Field(default_factory=str)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
 
@@ -76,14 +78,14 @@ class NotificationSinksConfig(BaseModelWithNoneReplacement):
 
 
 class RepoCredentials(BaseModel):
-    username: Optional[str] = Field(None)
-    password: Optional[str] = Field(None)
-    token: Optional[str] = Field(None)
+    username: str | None = Field(None)
+    password: str | None = Field(None)
+    token: str | None = Field(None)
 
 
 class RepoConfig(BaseModel):
     url: str
-    credentials: Optional[RepoCredentials] = Field(None)
+    credentials: RepoCredentials | None = Field(None)
 
 
 class PMConfig(BaseModelWithNoneReplacement):

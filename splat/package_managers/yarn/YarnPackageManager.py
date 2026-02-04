@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from splat.config.model import PMConfig
 from splat.interface.logger import LoggerInterface
@@ -17,9 +16,9 @@ class YarnPackageManager(PackageManagerInterface):
     def __init__(
         self,
         config: PMConfig,
-        command_runner: Optional[CommandRunner] = None,
-        fs: Optional[FileSystemInterface] = None,
-        logger: Optional[LoggerInterface] = None,
+        command_runner: CommandRunner | None = None,
+        fs: FileSystemInterface | None = None,
+        logger: LoggerInterface | None = None,
     ) -> None:
         super().__init__(config, command_runner, fs, logger)
         self.yarn = YarnCommandRunner(self.command_runner, self.logger)
@@ -50,11 +49,12 @@ class YarnPackageManager(PackageManagerInterface):
         return parse_yarn_audit_output(audit_output, lockfile)
 
     def update(self, vuln_report: AuditReport) -> list[str]:
-        init_log_msg = f"""{vuln_report.dep.name} from {vuln_report.dep.version} to {
-            vuln_report.fixed_version} in {vuln_report.lockfile.relative_path}"""
+        init_log_msg = f"""{vuln_report.dep.name} from {vuln_report.dep.version} to {vuln_report.fixed_version} in {
+            vuln_report.lockfile.relative_path
+        }"""
         log_msg = ""
         skip_error = (
-            f"Skipping update for {vuln_report.dep.name} {vuln_report.dep.version}: " f"{vuln_report.fix_skip_reason}"
+            f"Skipping update for {vuln_report.dep.name} {vuln_report.dep.version}: {vuln_report.fix_skip_reason}"
         )
         try:
             if vuln_report.fixed_version is None:

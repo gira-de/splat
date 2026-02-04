@@ -8,6 +8,7 @@ from splat.config.config_merger import merge_configs
 from splat.config.model import Config
 from splat.git.gitpython_client import GitPythonClient
 from splat.git.interface import GitClientInterface
+from splat.git.utils import is_splat_author
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
@@ -99,21 +100,54 @@ def process_remote_project(
 
     notifier = ProjectNotifier(project, notification_sinks)
     logger_manager.update_logger_level(merged_config.general.logging.level)
+    git_client.configure_identity(merged_config.general.git)
+
     branch_name = merged_config.general.git.branch_name
+    default_branch = project.default_branch
     severity_score = Severity.UNKNOWN
     mr_url = None
     logfile_url = get_logfile_url()
+
+    def _remove_project_dir() -> None:
+        if not merged_config.general.debug.skip_cleanup:
+            logger.debug(f"Removing {project.path}")
+            shutil.rmtree(project.path)
+
+    def _build_summary(status: StatusReport | None, severity: Severity | None, mr: str | None) -> ProjectSummary:
+        time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return ProjectSummary(
+            project_name=project.name_with_namespace,
+            time_stamp=time_stamp,
+            project_url=project.web_url,
+            status_report=status.value if status else None,
+            severity_score=severity.name.lower() if severity else None,
+            mr_url=mr,
+            logfile_url=logfile_url,
+        )
 
     branch_exists_remote = git_client.branch_exists_remote(branch_name)
     if branch_exists_remote:
         # always align local branch with remote
         git_client.create_branch(branch_name, f"origin/{branch_name}")
     else:
-        git_client.create_branch(branch_name, project.default_branch)
+        git_client.create_branch(branch_name, default_branch)
     git_client.switch_branch(branch_name)
     if branch_exists_remote:
         git_client.pull(branch_name)
-
+        open_mr_url = git_platform.get_open_merge_request_url(project, branch_name)
+        commit_authors = git_client.get_commit_authors_between(default_branch, branch_name)
+        non_splat_authors = [a for a in commit_authors if not is_splat_author(a, merged_config.general.git)]
+        if len(non_splat_authors) > 0:
+            msg = (
+                f"Splat's Branch '{branch_name}' contains commit from non-splat authors: \n"
+                f"Aborted processing project: '{project.name_with_namespace}' to avoid overwriting manual work."
+            )
+            logger.info(msg)
+            _remove_project_dir()
+            notifier.notify_project_skipped(msg, logfile_url)
+            return _build_summary(StatusReport.MANUAL_CHANGES, severity_score, open_mr_url)
+        # Only splat commits (or no commits) on the branch
+        git_client.reset_branch_to_ref(branch_name, default_branch)
     try:
         audit_fix_result = audit_and_fix_project(
             project, package_managers, merged_config, git_client, notifier.notify_failure
@@ -127,17 +161,5 @@ def process_remote_project(
         status_report = StatusReport.ERROR
         logger.error(f"Error processing remote project '{project.name_with_namespace}': {str(e)}")
 
-    if not merged_config.general.debug.skip_cleanup:
-        logger.debug(f"Removing {project.path}")
-        shutil.rmtree(project.path)
-
-    time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return ProjectSummary(
-        project_name=project.name_with_namespace,
-        time_stamp=time_stamp,
-        project_url=project.web_url,
-        status_report=status_report.value if status_report else None,
-        severity_score=severity_score.name.lower() if severity_score else None,
-        mr_url=mr_url,
-        logfile_url=logfile_url,
-    )
+    _remove_project_dir()
+    return _build_summary(status_report, severity_score, mr_url)

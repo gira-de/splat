@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import pyfiglet
 from pydantic import ValidationError
@@ -48,7 +48,7 @@ def log_hooks_config(hooks_config: HooksConfig | None, logger: LoggerInterface) 
 
         logger.info(
             f"Configured {len(hooks)} {hook_type.replace('_', ' ').title()} Hooks,"
-            f" with patterns: \"{', '.join(hooks.keys())}\""
+            f' with patterns: "{", ".join(hooks.keys())}"'
         )
 
 
@@ -132,9 +132,7 @@ def log_audit_fix_results(project_name: str, branch_name: str, result: ProjectAu
 
 def format_filters_log(filters: FiltersConfig) -> str:
     if filters.exclude or filters.include:
-        filters_log = (
-            f"filters:\n" f"Exclude: [{', '.join(filters.exclude)}]\n" f"Include: [{', '.join(filters.include)}]"
-        )
+        filters_log = f"filters:\nExclude: [{', '.join(filters.exclude)}]\nInclude: [{', '.join(filters.include)}]"
     else:
         filters_log = "no filters"
     return filters_log
@@ -144,7 +142,7 @@ def log_pydantic_validation_error(
     error: ValidationError,
     prefix_message: str,
     unparsable_data: str | dict[Any, Any] | None,
-    logger: Optional[LoggerInterface] = None,
+    logger: LoggerInterface | None = None,
 ) -> None:
     logger = logger or default_logger
     error_details = "; ".join(

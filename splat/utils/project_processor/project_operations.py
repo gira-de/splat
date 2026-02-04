@@ -2,7 +2,6 @@ import json
 import os
 from dataclasses import asdict
 from pathlib import Path
-from typing import Optional
 
 from splat.git.interface import GitClientInterface
 from splat.interface.GitPlatformInterface import GitPlatformInterface
@@ -23,7 +22,7 @@ def export_json_summary(
     logger.info(f"Project(s) summary successfully exported to {json_path}")
 
 
-def get_logfile_url() -> Optional[str]:
+def get_logfile_url() -> str | None:
     """Determine the log file url based on the environment (GitLab CI, GitHub Actions, local, etc.)."""
 
     # Check if running in GitLab CI
@@ -49,7 +48,7 @@ def handle_commits(
     notifier: ProjectNotifier,
     git_platform: GitPlatformInterface,
     git_client: GitClientInterface,
-) -> tuple[StatusReport, Optional[str]]:
+) -> tuple[StatusReport, str | None]:
     """Handle the commit actions for remote projects."""
 
     commits = project_result.commit_messages
@@ -57,10 +56,10 @@ def handle_commits(
     project_status = project_result.status_report
 
     if not commits and not remaining_vulns:
-        logger.info("No vulnerabilities fixed, not pushing any changes")
+        logger.info("No vulnerabilities fixed and no remaining vulnerabilities, not pushing any changes")
         return project_status, None
 
-    git_client.push(branch_name)
+    git_client.push(branch_name, force=True)
 
     try:
         logger.update_context(f"splat -> {project.name_with_namespace} -> {git_platform.type}")
