@@ -47,12 +47,16 @@ class TestGithubPlatformInitialization(unittest.TestCase):
         self.assertIs(github_platform.pr_handler.logger, mock_logger)
 
     def test_github_platform_initialization_with_custom_domain(self) -> None:
+        mock_logger = MockLogger()
+        mock_env_manager = MockEnvManager()
         platform = GithubPlatform(
             GitHubConfig(
                 type="github",
                 domain="https://custom.github.com",
                 access_token="mock_access_token",
-            )  # nosec
+            ),  # nosec
+            logger=mock_logger,
+            env_manager=mock_env_manager,
         )
 
         self.assertEqual(platform.api.api_base_url, "https://custom.github.com/api/v3")
