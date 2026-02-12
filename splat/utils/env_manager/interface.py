@@ -17,6 +17,15 @@ class EnvManager(ABC):
     def get(self, key: str) -> str:
         pass
 
+    def get_optional(self, key: str) -> str | None:
+        """
+        Return the environment variable value when present, otherwise None.
+        """
+        try:
+            return self.get(key)
+        except EnvironmentError:
+            return None
+
     def resolve_value(self, value: str) -> str:
         """
         If the value starts with a '$', treat it as an environment variable reference

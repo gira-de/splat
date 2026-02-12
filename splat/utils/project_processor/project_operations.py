@@ -28,14 +28,14 @@ def get_logfile_url(env_manager: EnvManager) -> str | None:
     """Determine the log file url based on the environment (GitLab CI, GitHub Actions, local, etc.)."""
 
     # Check if running in GitLab CI
-    gitlab_job_url = env_manager.get("CI_JOB_URL")
+    gitlab_job_url = env_manager.get_optional("CI_JOB_URL")
     if gitlab_job_url:
         return gitlab_job_url
 
     # Check if running in GitHub Actions
-    github_run_url = env_manager.get("GITHUB_SERVER_URL")
-    github_repo = env_manager.get("GITHUB_REPOSITORY")
-    github_run_id = env_manager.get("GITHUB_RUN_ID")
+    github_run_url = env_manager.get_optional("GITHUB_SERVER_URL")
+    github_repo = env_manager.get_optional("GITHUB_REPOSITORY")
+    github_run_id = env_manager.get_optional("GITHUB_RUN_ID")
     if github_run_url and github_repo and github_run_id:
         return f"{github_run_url}/{github_repo}/actions/runs/{github_run_id}"
 
