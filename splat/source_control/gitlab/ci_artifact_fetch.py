@@ -7,7 +7,7 @@ from splat.interface.logger import LoggerInterface
 from splat.source_control.gitlab.api import GitLabAPI
 from splat.source_control.gitlab.model import GitLabPipelineBridge, GitLabPipelineJob
 from splat.utils.env_manager.interface import EnvManager
-from splat.utils.fs import FileSystemInterface, RealFileSystem
+from splat.utils.fs import FileSystemInterface
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -82,7 +82,9 @@ def download_artifact(
     logger.info(f"Artifact downloaded: {artifact_file}")
 
 
-def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: EnvManager, logger: LoggerInterface) -> None:
+def fetch_gitlab_ci_summary_artifact(
+    access_token_name: str, env_manager: EnvManager, fs: FileSystemInterface, logger: LoggerInterface
+) -> None:
     env_manager = env_manager
     ci_api_url = env_manager.get("CI_SERVER_URL")
     ci_project_id = env_manager.get("CI_PROJECT_ID")
@@ -90,7 +92,6 @@ def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: EnvMan
     access_token = env_manager.get(access_token_name)
 
     api = GitLabAPI(api_url=ci_api_url, access_token=access_token)
-    fs = RealFileSystem()
     project_endpoint = f"/projects/{ci_project_id}"
 
     downstream_pipeline_id = fetch_downstream_pipeline_id(api, project_endpoint, ci_pipeline_id, logger)

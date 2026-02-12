@@ -1,33 +1,19 @@
-import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 
 from splat.config.model import PMConfig
-from splat.interface.logger import LoggerInterface
-from splat.model import AuditReport, Lockfile, Project
-from splat.utils.command_runner.interface import CommandRunner
-from splat.utils.command_runner.real_runner import SubprocessCommandRunner
-from splat.utils.env_manager.interface import EnvManager
-from splat.utils.env_manager.os import OsEnvManager
-from splat.utils.fs import FileSystemInterface, RealFileSystem
-from splat.utils.logger_config import default_logger
+from splat.model import AuditReport, Lockfile, Project, RuntimeContext
 from splat.utils.logging_utils import log_found_lockfiles
 
 
 class PackageManagerInterface(ABC):
-    def __init__(
-        self,
-        config: PMConfig,
-        command_runner: CommandRunner | None = None,
-        fs: FileSystemInterface | None = None,
-        logger: LoggerInterface | None = None,
-        env_manager: EnvManager | None = None,
-    ) -> None:
+    def __init__(self, config: PMConfig, ctx: RuntimeContext) -> None:
         self.config = config
-        self.logger = logger or default_logger
-        self.command_runner = command_runner or SubprocessCommandRunner(self.logger)
-        self.fs = fs or RealFileSystem()
-        self.env_manager = env_manager or OsEnvManager(self.logger)
+        self.ctx = ctx
+        self.logger = ctx.logger
+        self.command_runner = ctx.command_runner
+        self.fs = ctx.fs
+        self.env_manager = ctx.env_manager
 
     @property
     @abstractmethod
@@ -50,14 +36,17 @@ class PackageManagerInterface(ABC):
         pass
 
     def run_audit_command(self, cwd: Path, re_audit: bool = False) -> str:
-        use_mock = os.getenv("MOCK_AUDIT", "false").lower() == "true"
+        try:
+            raw = self.env_manager.get("MOCK_AUDIT").lower()
+        except EnvironmentError:
+            raw = "false"
+        use_mock = raw.strip().lower() in {"true", "1", "yes"}
         if use_mock:
             mock_file = "re_audit_output.json" if re_audit else "audit_output.json"
             mock_file_path = cwd / mock_file
             try:
                 # Read the mock audit output as a plain string to preserve its original formatting
-                with open(mock_file_path, "r") as file:
-                    return file.read()
+                return self.fs.read(str(mock_file_path))
             except FileNotFoundError:
                 raise FileNotFoundError(f"Mock audit file '{mock_file}' not found at '{mock_file_path}'.")
         # Call the abstract audit command method, which each subclass must implement
@@ -69,16 +58,15 @@ class PackageManagerInterface(ABC):
         pass
 
     def find_lockfiles(self, project: Project) -> list[Lockfile]:
-        # TODO: use FileSystemInterface (self.fs.glob) instead of Path.rglob
-        #       so this can be tested via the filesystem abstraction.
+        lockfile_paths = self.fs.glob(str(project.path), f"**/{self.lockfile_name}")
         found_lockfiles = [
             Lockfile(
-                path=lockfile,
-                relative_path=Path("/") / lockfile.relative_to(project.path),
+                path=Path(lockfile_path),
+                relative_path=Path("/") / Path(lockfile_path).relative_to(project.path),
             )
-            for lockfile in project.path.rglob(self.lockfile_name)
+            for lockfile_path in lockfile_paths
         ]
-        log_found_lockfiles(self.name, project.name_with_namespace, found_lockfiles)
+        log_found_lockfiles(self.name, project.name_with_namespace, found_lockfiles, self.logger)
 
         return found_lockfiles
 

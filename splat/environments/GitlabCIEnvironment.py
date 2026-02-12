@@ -94,12 +94,7 @@ class GitLabCIEnvironment(ExecutionEnvironmentInterface):
 
         # Write the pipeline to a YAML file
         yaml_file_path = "child-pipeline.yml"
-        with open(yaml_file_path, "w") as file:
-            yaml.dump(
-                pipeline.model_dump(exclude_none=True),
-                file,
-                sort_keys=False,
-                indent=2,
-                default_flow_style=False,
-                width=1000,
-            )
+        content = yaml.dump(
+            pipeline.model_dump(exclude_none=True), sort_keys=False, indent=2, default_flow_style=False, width=1000
+        )
+        self.ctx.fs.write(yaml_file_path, content)
