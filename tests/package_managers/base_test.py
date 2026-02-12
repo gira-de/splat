@@ -6,8 +6,17 @@ from unittest.mock import MagicMock
 
 from splat.config.model import PMConfig
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import AuditReport, Dependency, DependencyType, Lockfile, Project, Severity, VulnerabilityDetail
-from tests.mocks import MockCommandRunner, MockFileSystem, MockLogger
+from splat.model import (
+    AuditReport,
+    Dependency,
+    DependencyType,
+    Lockfile,
+    Project,
+    RuntimeContext,
+    Severity,
+    VulnerabilityDetail,
+)
+from tests.mocks import MockCommandRunner, MockEnvManager, MockFileSystem, MockLogger
 
 
 class BasePackageManagerTest(unittest.TestCase):
@@ -17,6 +26,13 @@ class BasePackageManagerTest(unittest.TestCase):
         self.mock_logger = MockLogger()
         self.mock_command_runner = MockCommandRunner(self.mock_logger)
         self.mock_fs = MockFileSystem()
+        self.mock_env_manager = MockEnvManager()
+        self.mock_ctx = RuntimeContext(
+            logger=self.mock_logger,
+            fs=self.mock_fs,
+            command_runner=self.mock_command_runner,
+            env_manager=self.mock_env_manager,
+        )
         self.project = Project(name_with_namespace="project1")
         self.project.path = Path("/mock/path")
         self.mock_config = MagicMock(spec=PMConfig)

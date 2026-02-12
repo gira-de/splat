@@ -8,9 +8,7 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestPipenvAudit(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.pipenv_manager = PipenvPackageManager(
-            self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger
-        )
+        self.pipenv_manager = PipenvPackageManager(self.mock_config, self.mock_ctx)
 
         self.mock_pipfile_content = toml.dumps({"packages": {"package1": ">=1.0.0"}})
         self.mock_fs.write("/path/to/project/Pipfile", self.mock_pipfile_content)

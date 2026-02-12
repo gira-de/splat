@@ -9,12 +9,13 @@ from splat.utils.plugin_initializer.notification_init import (
     get_notification_sink_class,
     initialize_notification_sinks,
 )
-from tests.mocks import MockLogger
+from tests.mocks import MockEnvManager, MockLogger
 
 
 class TestNotificationInitializer(unittest.TestCase):
     def setUp(self) -> None:
         self.mock_logger = MockLogger()
+        self.mock_env_manager = MockEnvManager()
 
     @patch("splat.utils.plugin_initializer.notification_init.get_class")
     def test_get_notification_sink_class_valid_type(self, mock_get_class: MagicMock) -> None:
@@ -47,7 +48,7 @@ class TestNotificationInitializer(unittest.TestCase):
     def test_initialize_notification_sinks_with_empty_configs(self, _: MagicMock) -> None:
         # Test with empty sinks list
         empty_config = NotificationSinksConfig(sinks=[])
-        sinks = initialize_notification_sinks(empty_config, self.mock_logger)
+        sinks = initialize_notification_sinks(empty_config, self.mock_logger, self.mock_env_manager)
         self.assertEqual(sinks, [])
         self.assertTrue(self.mock_logger.has_logged("No notification was configured. Skipping notifications.."))
 
@@ -62,7 +63,7 @@ class TestNotificationInitializer(unittest.TestCase):
         mock_sink_class.from_sink_config.return_value = mock_sink_instance
 
         valid_config = NotificationSinksConfig(sinks=[SinkConfig(type="email")])
-        sinks = initialize_notification_sinks(valid_config, self.mock_logger)
+        sinks = initialize_notification_sinks(valid_config, self.mock_logger, self.mock_env_manager)
 
         self.assertEqual(len(sinks), 1)
         expected_calls = [
@@ -80,7 +81,7 @@ class TestNotificationInitializer(unittest.TestCase):
         mock_get_notification_sink_class.side_effect = Exception("Test Exception")
 
         config_with_error = NotificationSinksConfig(sinks=[SinkConfig(type="invalid_type")])
-        sinks = initialize_notification_sinks(config_with_error, self.mock_logger)
+        sinks = initialize_notification_sinks(config_with_error, self.mock_logger, self.mock_env_manager)
 
         self.assertEqual(sinks, [])
         self.assertTrue(
