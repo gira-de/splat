@@ -34,6 +34,6 @@ class GitHubActionsEnvironment(ExecutionEnvironmentInterface):
         projects_data = _generate_platform_project_list(platform_to_projects)
         # Write the JSON to a file
         json_file_path = "/splat/platform_projects.json"
-        with open(json_file_path, "w") as file:
-            json.dump([proj.model_dump() for proj in projects_data], file, indent=2)
+        content = json.dumps([proj.model_dump() for proj in projects_data], indent=2)
+        self.ctx.fs.write(json_file_path, content)
         self.logger.info(f"Generated JSON file: {json_file_path}")

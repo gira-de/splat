@@ -1,9 +1,8 @@
 from typing import cast
 
 from splat.config.model import LocalPackageManagersConfig, PackageManagersConfig
-from splat.interface.logger import LoggerInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.utils.logger_config import default_logger
+from splat.model import RuntimeContext
 from splat.utils.logging_utils import log_configured_package_managers
 from splat.utils.plugin_initializer.dynamic_import import get_class
 from splat.utils.plugin_initializer.errors import PackageManagersConfigurationError
@@ -20,9 +19,8 @@ def get_pm_class(pm_name: str) -> type[PackageManagerInterface]:
 
 def initialize_package_managers(
     package_managers_config: PackageManagersConfig | LocalPackageManagersConfig,
-    logger: LoggerInterface | None = None,
+    ctx: RuntimeContext,
 ) -> list[PackageManagerInterface]:
-    logger = logger or default_logger
     initiated_package_managers: list[PackageManagerInterface] = []
     configured_pms: dict[str, bool] = {}
     try:
@@ -34,16 +32,16 @@ def initialize_package_managers(
 
             if pm_config is not None:
                 if pm_config.enabled is True:
-                    pm_instance = pm_class(pm_config)
+                    pm_instance = pm_class(pm_config, ctx=ctx)
                     initiated_package_managers.append(pm_instance)
                     configured_pms[pm_name] = True
-                    logger.debug(f"Package manager '{pm_name}' configured successfully: enabled")
+                    ctx.logger.debug(f"Package manager '{pm_name}' configured successfully: enabled")
                 else:
                     configured_pms[pm_name] = False
-                    logger.debug(f"Package manager '{pm_name}' configured successfully: disabled")
+                    ctx.logger.debug(f"Package manager '{pm_name}' configured successfully: disabled")
     except Exception as e:
         raise PackageManagersConfigurationError(e)
 
     if configured_pms:
-        log_configured_package_managers(configured_pms, logger)
+        log_configured_package_managers(configured_pms, ctx.logger)
     return initiated_package_managers
