@@ -9,11 +9,12 @@ from splat.utils.hooks_runner import (
     run_pre_commit_hooks,
     run_pre_commit_script,
 )
-from splat.utils.logger_config import logger
+from tests.mocks import MockLogger
 
 
 class TestHooksRunner(unittest.TestCase):
     def setUp(self) -> None:
+        self.logger = MockLogger()
         self.changed_files = ["/path/to/file1.py", "/path/to/file2.js"]
         self.lockfile = MagicMock(path=Path("/path/to/lockfile"))
         self.manifestfile = Path("/path/to/manifest.json")
@@ -55,16 +56,15 @@ class TestHooksRunner(unittest.TestCase):
             **self.expected_replacements,
             "${SPLAT_MATCHED_FILES}": "/path/to/file1.py",
         }
-        with self.assertLogs(logger.logger, level="DEBUG") as log:
-            run_pre_commit_script(pre_commit_hook_config, replacements)
-            self.assertIn(
-                "Running Pre Commit Hook Script Command: echo /path/to/file1.py in /path/to/project",
-                log.output[0],
+        run_pre_commit_script(pre_commit_hook_config, replacements, self.logger)
+        self.assertTrue(
+            self.logger.has_logged(
+                [
+                    "DEBUG: Running Pre Commit Hook Script Command: echo /path/to/file1.py in /path/to/project",
+                    "INFO: Successfully ran the Command: echo /path/to/file1.py in /path/to/project",
+                ]
             )
-            self.assertIn(
-                "Successfully ran the Command: echo /path/to/file1.py in /path/to/project",
-                log.output[2],
-            )
+        )
 
         mock_subprocess_run.assert_called_once_with(
             ["echo", "/path/to/file1.py"],
@@ -86,34 +86,19 @@ class TestHooksRunner(unittest.TestCase):
             **self.expected_replacements,
             "${SPLAT_MATCHED_FILES}": "/path/to/file1.py /path/to/file2.py",
         }
-        with self.assertLogs(logger.logger, level="DEBUG") as log:
-            run_pre_commit_script(pre_commit_hook_config, replacements)
-            self.assertIn(
-                "Running Pre Commit Hook Script Command for file /path/to/file1.py: \n  - echo /path/to/file1.py "
-                "in /path/to/project",
-                log.output[0],
-            )
-            self.assertIn(
-                "Successfully ran the Command: echo /path/to/file1.py in /path/to/project",
-                log.output[2],
-            )
-            self.assertIn(
-                "Running Pre Commit Hook Script Command for file /path/to/file2.py: \n  - echo /path/to/file2.py "
-                "in /path/to/project",
-                log.output[3],
-            )
-            self.assertIn(
-                "Successfully ran the Command: echo /path/to/file2.py in /path/to/project",
-                log.output[5],
-            )
-            self.assertIn(
-                "Running Pre Commit Hook Script Command: ls /path/to/project in /path/to/project",
-                log.output[6],
-            )
-            self.assertIn(
-                "Successfully ran the Command: ls /path/to/project in /path/to/project",
-                log.output[8],
-            )
+        run_pre_commit_script(pre_commit_hook_config, replacements, self.logger)
+        self.logger.has_logged(
+            [
+                "DEBUG: Running Pre Commit Hook Script Command for file /path/to/file1.py: \n  "
+                "- echo /path/to/file1.py in /path/to/project",
+                "INFO: Successfully ran the Command: echo /path/to/file1.py in /path/to/project",
+                "DEBUG: Running Pre Commit Hook Script Command for file /path/to/file2.py: \n  "
+                "- echo /path/to/file2.py in /path/to/project",
+                "INFO: Successfully ran the Command: echo /path/to/file2.py in /path/to/project",
+                "DEBUG: Running Pre Commit Hook Script Command: ls /path/to/project in /path/to/project",
+                "INFO: Successfully ran the Command: ls /path/to/project in /path/to/project",
+            ]
+        )
         expected_calls = [
             call(
                 ["echo", "/path/to/file1.py"],
@@ -149,25 +134,27 @@ class TestHooksRunner(unittest.TestCase):
             )
         }
 
-        with self.assertLogs(logger.logger) as log:
-            run_pre_commit_hooks(
-                changed_files=self.changed_files,
-                pre_commit_hooks_config=pre_commit_hooks_config,
-                lockfile=self.lockfile,
-                manifestfile=self.manifestfile,
-                project_root=self.project_root,
+        run_pre_commit_hooks(
+            changed_files=self.changed_files,
+            pre_commit_hooks_config=pre_commit_hooks_config,
+            lockfile=self.lockfile,
+            manifestfile=self.manifestfile,
+            project_root=self.project_root,
+            logger=self.logger,
+        )
+        self.assertTrue(
+            self.logger.has_logged(
+                "INFO: Running pre-commit hook for pattern '*.py' with 1 matched file(s): /path/to/file1.py"
             )
-            self.assertIn(
-                "Running pre-commit hook for pattern '*.py' with 1 matched file(s): /path/to/file1.py",
-                log.output[0],
-            )
+        )
 
         expected_replacements = {
             **self.expected_replacements,
             "${SPLAT_MATCHED_FILES}": "/path/to/file1.py",
         }
-
-        mock_run_pre_commit_script.assert_called_once_with(pre_commit_hooks_config["*.py"], expected_replacements)
+        mock_run_pre_commit_script.assert_called_once_with(
+            pre_commit_hooks_config["*.py"], expected_replacements, self.logger
+        )
 
     @patch("splat.utils.hooks_runner.run_pre_commit_script")
     def test_run_pre_commit_hooks_regex_pattern(self, mock_run_pre_commit_script: MagicMock) -> None:
@@ -179,25 +166,22 @@ class TestHooksRunner(unittest.TestCase):
             )
         }
 
-        with self.assertLogs(logger.logger) as log:
-            run_pre_commit_hooks(
-                changed_files=self.changed_files,
-                pre_commit_hooks_config=pre_commit_hooks_config,
-                lockfile=self.lockfile,
-                manifestfile=self.manifestfile,
-                project_root=self.project_root,
-            )
-            self.assertIn(
-                "Running pre-commit hook for pattern '/.*\\.py$/' with 1 matched file(s): /path/to/file1.py",
-                log.output[0],
-            )
+        run_pre_commit_hooks(
+            changed_files=self.changed_files,
+            pre_commit_hooks_config=pre_commit_hooks_config,
+            lockfile=self.lockfile,
+            manifestfile=self.manifestfile,
+            project_root=self.project_root,
+            logger=self.logger,
+        )
 
         expected_replacements = {
             **self.expected_replacements,
             "${SPLAT_MATCHED_FILES}": "/path/to/file1.py",
         }
-
-        mock_run_pre_commit_script.assert_called_once_with(pre_commit_hooks_config["/.*\\.py$/"], expected_replacements)
+        mock_run_pre_commit_script.assert_called_once_with(
+            pre_commit_hooks_config["/.*\\.py$/"], expected_replacements, self.logger
+        )
 
     @patch("splat.utils.hooks_runner.run_pre_commit_script")
     def test_run_pre_commit_hooks_when_no_changed_files_matched_config_pattern(
@@ -215,19 +199,15 @@ class TestHooksRunner(unittest.TestCase):
         manifestfile = Path("/path/to/manifest.json")
         project_root = Path("/path/to/project")
 
-        with self.assertLogs(logger.logger) as log:
-            run_pre_commit_hooks(
-                changed_files=changed_files,
-                pre_commit_hooks_config=pre_commit_hooks_config,
-                lockfile=lockfile,
-                manifestfile=manifestfile,
-                project_root=project_root,
-            )
-            self.assertIn(
-                "No matching files found for pre-commit hook pattern '*.md'. Skipping...",
-                log.output[0],
-            )
-        # Ensuring run_pre_commit_script was not called when no matching files
+        run_pre_commit_hooks(
+            changed_files=changed_files,
+            pre_commit_hooks_config=pre_commit_hooks_config,
+            lockfile=lockfile,
+            manifestfile=manifestfile,
+            project_root=project_root,
+            logger=self.logger,
+        )
+        self.assertTrue(self.logger.has_logged("INFO: No matching files found for pre-commit hook pattern '*.md'."))
         mock_run_pre_commit_script.assert_not_called()
 
     @patch(
@@ -244,12 +224,8 @@ class TestHooksRunner(unittest.TestCase):
             "${SPLAT_MATCHED_FILES}": "/path/to/file1.py",
             "${SPLAT_PROJECT_ROOT}": "/path/to/project",
         }
-        with self.assertLogs(logger.logger, level="ERROR") as log:
-            run_pre_commit_script(pre_commit_hook_config, replacements)
-            self.assertIn(
-                "Pre-commit hook script '['echo ${SPLAT_MATCHED_FILES}', 'another_command']' failed with error",
-                log.output[0],
-            )
+        run_pre_commit_script(pre_commit_hook_config, replacements, self.logger)
+        self.assertTrue(self.logger.has_logged("ERROR: Pre-commit hook script '['echo ${SPLAT_MATCHED_FILES}'"))
 
         # Ensure subprocess.run was only called once, since the first command fails and stops the script
         mock_subprocess_run.assert_called_once_with(

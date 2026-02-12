@@ -10,10 +10,12 @@ from splat.environments.GitlabCIEnvironment import (
     _generate_pipeline,
 )
 from splat.model import RemoteProject
+from tests.mocks import MockLogger
 
 
 class TestGitLabCIExecution(unittest.TestCase):
     def setUp(self) -> None:
+        self.logger = MockLogger()
         self.project1 = RemoteProject(
             name_with_namespace="namespace1/project1", id=1, clone_url="", default_branch="", web_url=""
         )
@@ -26,7 +28,7 @@ class TestGitLabCIExecution(unittest.TestCase):
 
     def test_generate_pipeline_one_platform_one_project(self) -> None:
         platform_to_projects = {"platform1": [self.project1]}
-        pipeline = _generate_pipeline(platform_to_projects)
+        pipeline = _generate_pipeline(platform_to_projects, self.logger)
 
         self.assertEqual(
             pipeline.default.model_dump(),
@@ -62,14 +64,14 @@ class TestGitLabCIExecution(unittest.TestCase):
 
     def test_generate_pipeline_platform_without_projects(self) -> None:
         platform_to_projects: dict[str, list[RemoteProject]] = {"platform1": []}
-        pipeline = _generate_pipeline(platform_to_projects)
+        pipeline = _generate_pipeline(platform_to_projects, self.logger)
 
         self.assertEqual(len(pipeline.__pydantic_extra__), 0)
         self.assertIsNone(pipeline.aggregate_summaries)
 
     def test_generate_pipeline_no_platforms(self) -> None:
         platform_to_projects: dict[str, list[RemoteProject]] = {}
-        pipeline = _generate_pipeline(platform_to_projects)
+        pipeline = _generate_pipeline(platform_to_projects, self.logger)
 
         self.assertEqual(len(pipeline.__pydantic_extra__), 0)
         self.assertIsNone(pipeline.aggregate_summaries)
@@ -79,7 +81,7 @@ class TestGitLabCIExecution(unittest.TestCase):
             "platform1": [self.project1, self.project2],
             "platform2": [self.project3],
         }
-        pipeline = _generate_pipeline(platform_to_projects)
+        pipeline = _generate_pipeline(platform_to_projects, self.logger)
 
         self.assertEqual(
             pipeline.default.model_dump(),
