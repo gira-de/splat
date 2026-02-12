@@ -6,6 +6,7 @@ from tests.mocks.mock_git_platform import MockGitPlatform
 from tests.mocks.mock_github_api import MockGitHubAPI
 from tests.mocks.mock_gitlab_api import MockGitLabAPI
 from tests.mocks.mock_logger import MockLogger
+from tests.mocks.mock_notification_sink import MockNotificationSink
 
 __all__ = [
     "MockGitPlatform",
@@ -16,4 +17,5 @@ __all__ = [
     "MockGitLabAPI",
     "MockLogger",
     "MockGitClient",
+    "MockNotificationSink",
 ]
