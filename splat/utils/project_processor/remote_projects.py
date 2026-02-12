@@ -23,9 +23,9 @@ def process_remote_projects(args: SplatArgs, config: Config, ctx: RuntimeContext
     )
     environment = (
         GitHubActionsEnvironment(config, git_platforms, ctx)
-        if ctx.env_manager.get("GITHUB_ACTIONS") == "true"
+        if ctx.env_manager.get_optional("GITHUB_ACTIONS") == "true"
         else GitLabCIEnvironment(config, git_platforms, ctx)
-        if ctx.env_manager.get("GITLAB_CI") == "true"
+        if ctx.env_manager.get_optional("GITLAB_CI") == "true"
         else LocalEnvironment(config, git_platforms, ctx)
     )
     environment.execute()
