@@ -12,7 +12,7 @@ from splat.config.model import (
 from splat.interface.logger import LoggerInterface
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.utils.logger_config import default_logger
+from splat.model import RuntimeContext
 from splat.utils.logging_utils import log_general_config, log_hooks_config
 from splat.utils.plugin_initializer.notification_init import initialize_notification_sinks
 from splat.utils.plugin_initializer.package_managers_init import initialize_package_managers
@@ -23,18 +23,17 @@ def merge_configs(
     local_config: LocalConfig,
     global_notification_sinks: list[NotificationSinksInterface],
     global_package_managers: list[PackageManagerInterface],
-    logger: LoggerInterface | None = None,
+    ctx: RuntimeContext,
 ) -> tuple[
     Config,
     list[NotificationSinksInterface],
     list[PackageManagerInterface],
 ]:
-    logger = logger or default_logger
-    merged_general_config = _merge_general_configs(global_config.general, local_config.general, logger)
-    merged_hooks = _merge_hooks_config(global_config.hooks, local_config.hooks, logger)
-    merged_notifications = _merge_notifications_config(global_notification_sinks, local_config.notifications, logger)
+    merged_general_config = _merge_general_configs(global_config.general, local_config.general, ctx.logger)
+    merged_hooks = _merge_hooks_config(global_config.hooks, local_config.hooks, ctx.logger)
+    merged_notifications = _merge_notifications_config(global_notification_sinks, local_config.notifications, ctx)
     merged_package_managers = _merge_package_managers_config(
-        global_package_managers, local_config.package_managers, logger
+        global_package_managers, local_config.package_managers, ctx
     )
     return (
         Config(general=merged_general_config, hooks=merged_hooks),
@@ -85,21 +84,21 @@ def _merge_general_configs(
 def _merge_notifications_config(
     global_notification_sinks: list[NotificationSinksInterface],
     local_notifications_config: LocalNotificationSinksConfig | None,
-    logger: LoggerInterface,
+    ctx: RuntimeContext,
 ) -> list[NotificationSinksInterface]:
     merged_notifications_sinks = global_notification_sinks.copy()
 
     if local_notifications_config is None:
-        logger.debug("No project-specific notification configuration provided. Using global configuration only.")
+        ctx.logger.debug("No project-specific notification configuration provided. Using global configuration only.")
     else:
-        local_sinks = initialize_notification_sinks(local_notifications_config, logger)
+        local_sinks = initialize_notification_sinks(local_notifications_config, ctx.logger, ctx.env_manager)
 
         if local_notifications_config.use_global_config is False:
-            logger.debug("Using project-specific notification configuration only. Global configuration is ignored.")
+            ctx.logger.debug("Using project-specific notification configuration only. Global configuration is ignored.")
             return local_sinks
 
         merged_notifications_sinks += local_sinks
-        logger.debug(
+        ctx.logger.debug(
             f"Adding {len(local_sinks)} local notification sinks to the "
             f"existing {len(global_notification_sinks)} global sinks"
         )
@@ -142,10 +141,10 @@ def _merge_hooks_config(
 def _merge_package_managers_config(
     global_package_managers: list[PackageManagerInterface],
     local_package_managers_config: LocalPackageManagersConfig | None,
-    logger: LoggerInterface,
+    ctx: RuntimeContext,
 ) -> list[PackageManagerInterface]:
     if local_package_managers_config is None:
-        logger.debug("No project-specific package manager configuration provided. Using global configuration.")
+        ctx.logger.debug("No project-specific package manager configuration provided. Using global configuration.")
         return global_package_managers
 
     global_pm_names = {pm.name.lower() for pm in global_package_managers}
@@ -162,29 +161,29 @@ def _merge_package_managers_config(
             if local_pm_name not in global_pm_names:
                 # New package manager: initialize and add it.
                 pm_class = initialize_package_managers(
-                    LocalPackageManagersConfig(**{local_pm_name: local_pm_config}), logger
+                    LocalPackageManagersConfig(**{local_pm_name: local_pm_config}), ctx
                 )
                 final_package_managers.append(pm_class[0])
                 global_pm_names.add(local_pm_name)
-                logger.debug(f"Enabled project-specific package manager '{local_pm_name}'.")
+                ctx.logger.debug(f"Enabled project-specific package manager '{local_pm_name}'.")
             else:
                 # Existing PM: merge repository configurations (local overrides global).
                 for pm in final_package_managers:
                     if pm.name.lower() == local_pm_name:
                         merged_repos = {**pm.config.repositories, **local_pm_config.repositories}
                         pm.config.repositories = merged_repos
-                        logger.debug(f"Merged repositories for project-specific package manager '{local_pm_name}'.")
+                        ctx.logger.debug(f"Merged repositories for project-specific package manager '{local_pm_name}'.")
                         break
         else:  # disable this package manager.
             if local_pm_name in global_pm_names:
                 final_package_managers = [pm for pm in final_package_managers if pm.name.lower() != local_pm_name]
                 global_pm_names.discard(local_pm_name)
-                logger.debug(f"Disabled project-specific package manager '{local_pm_name}'.")
+                ctx.logger.debug(f"Disabled project-specific package manager '{local_pm_name}'.")
             else:
-                logger.debug(f"Project-specific package manager '{local_pm_name}' is already disabled.")
+                ctx.logger.debug(f"Project-specific package manager '{local_pm_name}' is already disabled.")
 
     if unspecified_pms:
-        logger.debug(
+        ctx.logger.debug(
             f"Package manager(s) '{', '.join(unspecified_pms)}' are not specified in the project-specific "
             "configuration. Keeping global configuration."
         )

@@ -4,8 +4,8 @@ import subprocess  # nosec B404
 from pathlib import Path
 
 from splat.config.model import HooksPreCommitConfig
+from splat.interface.logger import LoggerInterface
 from splat.model import Lockfile
-from splat.utils.logger_config import logger
 
 
 def _is_regex(pattern: str) -> bool:
@@ -32,6 +32,7 @@ def run_pre_commit_hooks(
     lockfile: Lockfile,
     manifestfile: Path,
     project_root: Path,
+    logger: LoggerInterface,
 ) -> None:
     """
     Run pre-commit hooks for the given files based on the pre-commit hooks configuration.
@@ -74,12 +75,14 @@ def run_pre_commit_hooks(
                 f"Running pre-commit hook for pattern '{pattern}' with {len(matched_files)} "
                 f"matched file(s): {', '.join(mf for mf in matched_files)}"
             )
-            run_pre_commit_script(single_pre_commit_hook_config, replacements)
+            run_pre_commit_script(single_pre_commit_hook_config, replacements, logger)
         else:
             logger.info(f"No matching files found for pre-commit hook pattern '{pattern}'. Skipping...")
 
 
-def run_pre_commit_script(pre_commit_hook_config: HooksPreCommitConfig, replacements: dict[str, str]) -> None:
+def run_pre_commit_script(
+    pre_commit_hook_config: HooksPreCommitConfig, replacements: dict[str, str], logger: LoggerInterface
+) -> None:
     try:
         cwd = Path(_replace_placeholders(pre_commit_hook_config.cwd, replacements)).resolve()
 

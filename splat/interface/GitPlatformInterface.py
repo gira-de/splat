@@ -3,7 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from splat.config.model import PlatformConfig
+from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
+from splat.utils.env_manager.interface import EnvManager
 
 
 class GitPlatformInterface(ABC):
@@ -39,7 +41,9 @@ class GitPlatformInterface(ABC):
 
     @classmethod
     @abstractmethod
-    def from_platform_config(cls, platform_config: PlatformConfig) -> GitPlatformInterface:
+    def from_platform_config(
+        cls, platform_config: PlatformConfig, logger: LoggerInterface, env_manager: EnvManager
+    ) -> GitPlatformInterface:
         pass
 
     @abstractmethod

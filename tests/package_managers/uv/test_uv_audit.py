@@ -10,7 +10,7 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestUvAudit(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.uv_manager = UvPackageManager(self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger)
+        self.uv_manager = UvPackageManager(self.mock_config, self.mock_ctx)
 
         self.mock_pyproject_content = toml.dumps({"project": {"dependencies": {"package1": ">=1.0.0"}}})
         self.mock_fs.write("/path/to/project/pyproject.toml", self.mock_pyproject_content)

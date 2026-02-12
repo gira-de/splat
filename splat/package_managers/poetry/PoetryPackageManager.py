@@ -3,29 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 
 from splat.config.model import PMConfig
-from splat.interface.logger import LoggerInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import AuditReport, DependencyType, Lockfile
+from splat.model import AuditReport, DependencyType, Lockfile, RuntimeContext
 from splat.package_managers.common.pip_audit_parser import parse_pip_audit_output
 from splat.package_managers.poetry.command_runner import PoetryCommandRunner
 from splat.package_managers.poetry.pyproject_manager import PoetryPyprojectManager
 from splat.package_managers.poetry.repo_manager import PoetryRepoManager
-from splat.utils.command_runner.interface import CommandRunner
-from splat.utils.env_manager.interface import EnvManager
-from splat.utils.fs import FileSystemInterface
 
 
 class PoetryPackageManager(PackageManagerInterface):
-    def __init__(
-        self,
-        config: PMConfig,
-        command_runner: CommandRunner | None = None,
-        fs: FileSystemInterface | None = None,
-        logger: LoggerInterface | None = None,
-        env_manager: EnvManager | None = None,
-    ) -> None:
-        self.config = config
-        super().__init__(config, command_runner, fs, logger, env_manager)
+    def __init__(self, config: PMConfig, ctx: RuntimeContext) -> None:
+        super().__init__(config, ctx)
         self.poetry = PoetryCommandRunner(self.command_runner, self.fs, self.logger)
         self.repo_manager = PoetryRepoManager(self.env_manager, self.fs, self.logger)
         self.pyproject_manager = PoetryPyprojectManager(self.fs, self.logger)

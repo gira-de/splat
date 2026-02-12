@@ -10,9 +10,7 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestPoetryUpdate(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.poetry_manager = PoetryPackageManager(
-            self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger
-        )
+        self.poetry_manager = PoetryPackageManager(self.mock_config, self.mock_ctx)
 
     def test_update_direct_dependency(self) -> None:
         vuln_report = self.audit_report

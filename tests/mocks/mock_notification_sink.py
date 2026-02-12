@@ -1,36 +1,31 @@
-from __future__ import annotations
-
-from abc import ABC, abstractmethod
-
 from splat.config.model import SinkConfig
 from splat.interface.logger import LoggerInterface
+from splat.interface.NotificationSinksInterface import NotificationSinksInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
 from splat.utils.env_manager.interface import EnvManager
 
 
-class NotificationSinksInterface(ABC):
-    def __init__(self, config: SinkConfig) -> None:
-        self.config = config
+class MockNotificationSink(NotificationSinksInterface):
+    def __init__(self) -> None:
+        self.merge_request_notifications: list[tuple[MergeRequest, list[str], list[AuditReport]]] = []
+        self.project_skipped_notifications: list[tuple[RemoteProject, str, str | None]] = []
+        self.failure_notifications: list[tuple[str, RemoteProject | None, str, AuditReport | None, str | None]] = []
 
     @property
-    @abstractmethod
     def type(self) -> str:
-        pass
+        return "recording"
 
     @classmethod
-    @abstractmethod
     def from_sink_config(
         cls, sink_config: SinkConfig, logger: LoggerInterface, env_manager: EnvManager
     ) -> NotificationSinksInterface:
-        pass
+        return cls()
 
-    @abstractmethod
     def send_merge_request_notification(
         self, merge_request: MergeRequest, commit_messages: list[str], remaining_vulns: list[AuditReport]
     ) -> None:
-        pass
+        self.merge_request_notifications.append((merge_request, commit_messages, remaining_vulns))
 
-    @abstractmethod
     def send_failure_notification(
         self,
         error_details: str,
@@ -39,13 +34,9 @@ class NotificationSinksInterface(ABC):
         dep_vuln_report: AuditReport | None = None,
         logfile_url: str | None = None,
     ) -> None:
-        pass
+        self.failure_notifications.append((error_details, project, context, dep_vuln_report, logfile_url))
 
-    @abstractmethod
     def send_project_skipped_notification(
         self, project: RemoteProject, reason: str, logfile_url: str | None = None
     ) -> None:
-        """
-        Notify that the project processing was skipped/aborted for a given reason (e.g. manual changes on the branch).
-        """
-        pass
+        self.project_skipped_notifications.append((project, reason, logfile_url))

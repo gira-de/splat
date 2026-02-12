@@ -1,7 +1,7 @@
 from splat.model import RemoteProject
 from splat.source_control.github.GithubPlatform import GithubPlatform
 from splat.source_control.github.model import GitHubConfig
-from tests.mocks import MockGitHubAPI, MockLogger
+from tests.mocks import MockEnvManager, MockGitHubAPI, MockLogger
 from tests.source_control.base_test import BaseSourceControlTest
 
 
@@ -10,6 +10,7 @@ class BaseGithubSourceControlTest(BaseSourceControlTest):
         super().setUp()
         self.mock_api = MockGitHubAPI(domain="https://github.com", access_token="secret_token")  # nosec
         self.mock_logger = MockLogger()
+        self.mock_env_manager = MockEnvManager()
         self.github_platform = GithubPlatform(
             config=GitHubConfig(
                 type="github",
@@ -17,6 +18,7 @@ class BaseGithubSourceControlTest(BaseSourceControlTest):
                 access_token="secret_token",  # nosec
             ),
             logger=self.mock_logger,
+            env_manager=self.mock_env_manager,
             api=self.mock_api,
         )
 

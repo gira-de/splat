@@ -1,13 +1,12 @@
 from abc import ABC, abstractmethod
 
 from splat.interface.logger import LoggerInterface
-from splat.utils.logger_config import default_logger
 
 
 class EnvManager(ABC):
     """Abstract interface for managing environment variables."""
 
-    def __init__(self, logger: LoggerInterface = default_logger) -> None:
+    def __init__(self, logger: LoggerInterface) -> None:
         self.logger = logger
 
     @abstractmethod
@@ -17,6 +16,15 @@ class EnvManager(ABC):
     @abstractmethod
     def get(self, key: str) -> str:
         pass
+
+    def get_optional(self, key: str) -> str | None:
+        """
+        Return the environment variable value when present, otherwise None.
+        """
+        try:
+            return self.get(key)
+        except EnvironmentError:
+            return None
 
     def resolve_value(self, value: str) -> str:
         """
