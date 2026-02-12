@@ -20,21 +20,19 @@ from splat.notifications.teams.model import (
     TeamsSinkConfig,
 )
 from splat.utils.env_manager.interface import EnvManager
-from splat.utils.env_manager.os import OsEnvManager
-from splat.utils.logger_config import default_logger
 
 
 class TeamsNotificationSink(NotificationSinksInterface):
     def __init__(
         self,
         config: TeamsSinkConfig,
-        logger: LoggerInterface | None = None,
-        env_manager: EnvManager | None = None,
+        logger: LoggerInterface,
+        env_manager: EnvManager,
         post_size_limit: int = 20000,
     ) -> None:
         super().__init__(config)
-        self.logger = logger or default_logger
-        self.env_manager = env_manager or OsEnvManager(self.logger)
+        self.logger = logger
+        self.env_manager = env_manager
         self.general_webhook_url = self.env_manager.resolve_value(config.webhook_url)
         self.mr_webhook_url = (
             self.env_manager.resolve_value(config.merge_request.webhook_url) if config.merge_request else None
@@ -53,10 +51,12 @@ class TeamsNotificationSink(NotificationSinksInterface):
         return "teams"
 
     @classmethod
-    def from_sink_config(cls, sink_config: SinkConfig) -> TeamsNotificationSink:
+    def from_sink_config(
+        cls, sink_config: SinkConfig, logger: LoggerInterface, env_manager: EnvManager
+    ) -> TeamsNotificationSink:
         config_dict = sink_config.model_dump()
         validated_config = TeamsSinkConfig.model_validate(config_dict)
-        return cls(config=validated_config)
+        return cls(config=validated_config, logger=logger, env_manager=env_manager)
 
     def _send_notification(
         self, webhook_url: str, body_chunks: list[list[TeamsPayloadContentBodyElement]], timeout: float = 5.0

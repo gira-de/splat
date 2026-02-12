@@ -3,7 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from splat.config.model import SinkConfig
+from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
+from splat.utils.env_manager.interface import EnvManager
 
 
 class NotificationSinksInterface(ABC):
@@ -17,7 +19,9 @@ class NotificationSinksInterface(ABC):
 
     @classmethod
     @abstractmethod
-    def from_sink_config(cls, sink_config: SinkConfig) -> NotificationSinksInterface:
+    def from_sink_config(
+        cls, sink_config: SinkConfig, logger: LoggerInterface, env_manager: EnvManager
+    ) -> NotificationSinksInterface:
         pass
 
     @abstractmethod

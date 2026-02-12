@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 
 from splat.environments.common import fetch_filtered_projects_for_platforms
 from splat.interface.ExecutionEnvironmentInterface import ExecutionEnvironmentInterface
+from splat.interface.logger import LoggerInterface
 from splat.model import RemoteProject
-from splat.utils.logger_config import logger
 
 
 class DockerConfig(BaseModel):
@@ -43,7 +43,7 @@ class Pipeline(BaseModel, extra="allow"):
     aggregate_summaries: Job | None
 
 
-def _generate_pipeline(platform_to_projects: dict[str, list[RemoteProject]]) -> Pipeline:
+def _generate_pipeline(platform_to_projects: dict[str, list[RemoteProject]], logger: LoggerInterface) -> Pipeline:
     logger.debug("Generating child pipeline YAML in GitLab CI Environment...")
     jobs: dict[str, Job] = {}
     process_job_names = []
@@ -87,10 +87,10 @@ def _generate_pipeline(platform_to_projects: dict[str, list[RemoteProject]]) -> 
 class GitLabCIEnvironment(ExecutionEnvironmentInterface):
     def execute(self) -> None:
         """Fetch projects and generate downstream pipelines."""
-        logger.info("Executing in GitLab environment...")
+        self.logger.info("Executing in GitLab environment...")
 
-        platform_to_projects = fetch_filtered_projects_for_platforms(self.git_platforms)
-        pipeline = _generate_pipeline(platform_to_projects)
+        platform_to_projects = fetch_filtered_projects_for_platforms(self.git_platforms, self.logger)
+        pipeline = _generate_pipeline(platform_to_projects, self.logger)
 
         # Write the pipeline to a YAML file
         yaml_file_path = "child-pipeline.yml"

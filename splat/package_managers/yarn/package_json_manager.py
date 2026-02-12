@@ -1,12 +1,11 @@
 import json
 
 from splat.interface.logger import LoggerInterface
-from splat.utils.fs import FileSystemInterface, RealFileSystem
-from splat.utils.logger_config import default_logger
+from splat.utils.fs import FileSystemInterface
 
 
 class PackageJsonManager:
-    def __init__(self, fs: FileSystemInterface = RealFileSystem(), logger: LoggerInterface = default_logger) -> None:
+    def __init__(self, fs: FileSystemInterface, logger: LoggerInterface) -> None:
         self.fs = fs
         self.logger = logger
 
