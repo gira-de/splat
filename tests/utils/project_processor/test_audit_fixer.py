@@ -3,8 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest import TestCase
 
-from splat.config.model import Config, PMConfig
-from splat.interface.PackageManagerInterface import PackageManagerInterface
+from splat.config.model import Config
 from splat.model import (
     AuditReport,
     Dependency,
@@ -17,49 +16,7 @@ from splat.model import (
 )
 from splat.utils.project_processor.audit_fixer import audit_and_fix_project
 from tests.mocks import MockCommandRunner, MockEnvManager, MockFileSystem, MockGitClient, MockLogger
-
-
-class PackageManagerMock(PackageManagerInterface):
-    def __init__(self, lockfile: Lockfile, lockfile_name: str, config: PMConfig, ctx: RuntimeContext) -> None:
-        super().__init__(config, ctx)
-        self.lockfile = lockfile
-        self._lockfile_name = lockfile_name
-        self.audit_results: list[list[AuditReport]] = []
-        self.update_results: list[list[str]] = []
-
-    @property
-    def name(self) -> str:
-        return "mock"
-
-    @property
-    def manifest_file_name(self) -> str:
-        return "manifest.mock"
-
-    @property
-    def lockfile_name(self) -> str:
-        return "lock.mock"
-
-    def run_audit_command(self, cwd: Path, re_audit: bool = False) -> str:
-        return '"empty"'
-
-    def run_real_audit_command(self, cwd: Path) -> str:
-        return '"empty"'
-
-    def find_lockfiles(self, project: Project) -> list[Lockfile]:
-        return [self.lockfile]
-
-    def install(self, lockfile: Lockfile) -> None:
-        pass
-
-    def audit(self, lockfile: Lockfile, re_audit: bool = False) -> list[AuditReport]:
-        if self.audit_results:
-            return self.audit_results.pop(0)
-        return []
-
-    def update(self, vuln_report: AuditReport) -> list[str]:
-        if self.update_results:
-            return self.update_results.pop(0)
-        return []
+from tests.mocks.mock_package_manager import MockPackageManager
 
 
 class AuditAndFixProjectTests(TestCase):
@@ -72,7 +29,7 @@ class AuditAndFixProjectTests(TestCase):
         self.mock_fs = MockFileSystem()
         self.mock_env_manager = MockEnvManager()
         self.mock_ctx = RuntimeContext(self.mock_logger, self.mock_fs, self.mock_command_runner, self.mock_env_manager)
-        self.package_manager = PackageManagerMock(
+        self.package_manager = MockPackageManager(
             lockfile=self.lockfile,
             lockfile_name="lock.mock",
             config=self.config.package_managers.pipenv,
@@ -87,7 +44,7 @@ class AuditAndFixProjectTests(TestCase):
 
         self.assertTrue(
             self.mock_logger.has_logged(
-                "[INFO] Auditing dependencies in lockfile 'fake/lock.mock' for security vulnerabilities..."
+                "INFO: Auditing dependencies in lockfile 'fake/lock.mock' for security vulnerabilities..."
             )
         )
 
@@ -123,6 +80,6 @@ class AuditAndFixProjectTests(TestCase):
 
         self.assertTrue(
             self.mock_logger.has_logged(
-                "[INFO] Reauditing dependencies in lockfile 'fake/lock.mock' for security vulnerabilities..."
+                "INFO: Reauditing dependencies in lockfile 'fake/lock.mock' for security vulnerabilities..."
             )
         )
