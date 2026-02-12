@@ -4,12 +4,11 @@ from typing import Callable, Generator
 from splat.config.model import Config
 from splat.git.interface import GitClientInterface
 from splat.git.utils import create_commit_message
+from splat.interface.logger import LoggerInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
 from splat.model import AuditReport, Lockfile, Project, ProjectAuditFixResult, Severity, StatusReport
 from splat.utils.errors import SkipLockfileProcessingError
 from splat.utils.hooks_runner import run_pre_commit_hooks
-from splat.utils.logger_config import ContextLoggerAdapter
-from splat.utils.logger_config import logger as production_logger
 from splat.utils.logging_utils import (
     format_remaining_vulns_summary,
     log_audit,
@@ -23,6 +22,7 @@ def handle_project_errors(
     project: Project,
     context: str,
     status_report: list[StatusReport],
+    logger: LoggerInterface,
     notify_callback: Callable[[str, Exception, AuditReport | None], None] | None = None,
     report: AuditReport | None = None,
     skip_loop: bool = True,
@@ -41,7 +41,7 @@ def handle_project_errors(
     try:
         yield
     except Exception as error:
-        production_logger.error(f"Error in {context} for project '{project.name_with_namespace}': {error}")
+        logger.error(f"Error in {context} for project '{project.name_with_namespace}': {error}")
         if notify_callback:
             notify_callback(context, error, report)
         status_report[0] = StatusReport.ERROR
@@ -54,8 +54,8 @@ def audit_and_fix_project(
     package_managers: list[PackageManagerInterface],
     config: Config,
     git_client: GitClientInterface,
+    logger: LoggerInterface,
     notify_callback: Callable[[str, Exception, AuditReport | None], None] | None = None,
-    logger: ContextLoggerAdapter = production_logger,
 ) -> ProjectAuditFixResult:
     commit_messages: list[str] = []
     remaining_vulns: list[AuditReport] = []
@@ -72,14 +72,14 @@ def audit_and_fix_project(
                 audit_reports: list[AuditReport] | None = None
 
                 # Install deps
-                with handle_project_errors(project, "Installing dependencies", status_report, notify_callback):
+                with handle_project_errors(project, "Installing dependencies", status_report, logger, notify_callback):
                     manager.install(found_lockfile)
 
                 # Audit lockfile
-                with handle_project_errors(project, "Auditing lockfile", status_report, notify_callback):
+                with handle_project_errors(project, "Auditing lockfile", status_report, logger, notify_callback):
                     log_audit(logger, found_lockfile, False)
                     audit_reports = manager.audit(found_lockfile)
-                    log_found_audit_reports(found_lockfile, audit_reports)
+                    log_found_audit_reports(found_lockfile, audit_reports, logger)
 
                 if not audit_reports:
                     continue
@@ -91,7 +91,13 @@ def audit_and_fix_project(
 
                     # Dependency Update
                     with handle_project_errors(
-                        project, "Dependency Update", status_report, notify_callback, report, skip_loop=False
+                        project,
+                        "Dependency Update",
+                        status_report,
+                        logger,
+                        notify_callback,
+                        report,
+                        skip_loop=False,
                     ):
                         files_to_commit = manager.update(report)
 
@@ -100,7 +106,7 @@ def audit_and_fix_project(
 
                     # Pre-commit Hooks
                     with handle_project_errors(
-                        project, "Running pre-commit hooks", status_report, notify_callback, report
+                        project, "Running pre-commit hooks", status_report, logger, notify_callback, report
                     ):
                         run_pre_commit_hooks(
                             changed_files=files_to_commit,
@@ -108,6 +114,7 @@ def audit_and_fix_project(
                             lockfile=found_lockfile,
                             manifestfile=found_lockfile.path.parent / manager.manifest_file_name,
                             project_root=project.path,
+                            logger=logger,
                         )
 
                     # Commit Changes
@@ -118,7 +125,7 @@ def audit_and_fix_project(
 
                 if commit_messages:
                     with handle_project_errors(
-                        project, "Re-auditing lockfile", status_report, notify_callback, skip_loop=False
+                        project, "Re-auditing lockfile", status_report, logger, notify_callback, skip_loop=False
                     ):
                         log_audit(logger, found_lockfile, True)
                         vulns = manager.audit(found_lockfile, re_audit=True)
@@ -133,5 +140,5 @@ def audit_and_fix_project(
     logger.update_context(f"splat -> {project.name_with_namespace}")
     branch_name = config.general.git.branch_name
     audit_fix_result = ProjectAuditFixResult(highest_severity, commit_messages, remaining_vulns, status_report[0])
-    log_audit_fix_results(project.name_with_namespace, branch_name, audit_fix_result)
+    log_audit_fix_results(project.name_with_namespace, branch_name, audit_fix_result, logger)
     return audit_fix_result

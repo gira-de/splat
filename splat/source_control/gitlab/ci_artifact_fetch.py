@@ -7,9 +7,7 @@ from splat.interface.logger import LoggerInterface
 from splat.source_control.gitlab.api import GitLabAPI
 from splat.source_control.gitlab.model import GitLabPipelineBridge, GitLabPipelineJob
 from splat.utils.env_manager.interface import EnvManager
-from splat.utils.env_manager.os import OsEnvManager
 from splat.utils.fs import FileSystemInterface, RealFileSystem
-from splat.utils.logger_config import default_logger
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -17,7 +15,7 @@ def fetch_downstream_pipeline_id(
     gitlab_api: GitLabAPI,
     project_endpoint: str,
     pipeline_id: str,
-    logger: LoggerInterface = default_logger,
+    logger: LoggerInterface,
 ) -> str:
     logger.info("Fetching downstream pipeline ID...")
     endpoint = f"{project_endpoint}/pipelines/{pipeline_id}/bridges?per_page=100"
@@ -39,7 +37,7 @@ def fetch_job_id(
     project_endpoint: str,
     pipeline_id: str,
     job_name: str,
-    logger: LoggerInterface = default_logger,
+    logger: LoggerInterface,
 ) -> str:
     logger.info(f"Fetching job ID for {job_name}...")
     page = 1
@@ -55,7 +53,7 @@ def fetch_job_id(
         try:
             jobs = [GitLabPipelineJob.model_validate(item) for item in jobs_json]
         except ValidationError as e:
-            log_pydantic_validation_error(e, "Invalid GitLab jobs data", None)  # None for now
+            log_pydantic_validation_error(e, "Invalid GitLab jobs data", None, logger)  # None for now
             jobs = []
         for job in jobs:
             if job.name == job_name:
@@ -70,7 +68,7 @@ def download_artifact(
     project_endpoint: str,
     job_id: str,
     fs: FileSystemInterface,
-    logger: LoggerInterface = default_logger,
+    logger: LoggerInterface,
 ) -> None:
     logger.info("Downloading artifact dashboard/projects_summary.json...")
     endpoint = f"{project_endpoint}/jobs/{job_id}/artifacts/dashboard/projects_summary.json"
@@ -84,8 +82,8 @@ def download_artifact(
     logger.info(f"Artifact downloaded: {artifact_file}")
 
 
-def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: EnvManager | None = None) -> None:
-    env_manager = env_manager or OsEnvManager(default_logger)
+def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: EnvManager, logger: LoggerInterface) -> None:
+    env_manager = env_manager
     ci_api_url = env_manager.get("CI_SERVER_URL")
     ci_project_id = env_manager.get("CI_PROJECT_ID")
     ci_pipeline_id = env_manager.get("CI_PIPELINE_ID")
@@ -95,6 +93,6 @@ def fetch_gitlab_ci_summary_artifact(access_token_name: str, env_manager: EnvMan
     fs = RealFileSystem()
     project_endpoint = f"/projects/{ci_project_id}"
 
-    downstream_pipeline_id = fetch_downstream_pipeline_id(api, project_endpoint, ci_pipeline_id)
-    job_id = fetch_job_id(api, project_endpoint, downstream_pipeline_id, "aggregate_summaries")
-    download_artifact(api, project_endpoint, job_id, fs)
+    downstream_pipeline_id = fetch_downstream_pipeline_id(api, project_endpoint, ci_pipeline_id, logger)
+    job_id = fetch_job_id(api, project_endpoint, downstream_pipeline_id, "aggregate_summaries", logger)
+    download_artifact(api, project_endpoint, job_id, fs, logger)
