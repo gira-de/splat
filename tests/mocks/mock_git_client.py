@@ -12,7 +12,10 @@ class MockGitClient(GitClientInterface):
         self.current_branch: str | None = None
         self.commit_calls: list[tuple[list[str], str]] = []
         self.push_calls: list[str] = []
+        self.push_calls_with_force: list[tuple[str, bool]] = []
         self.discard_calls: list[list[str] | None] = []
+        self.commit_authors_between: list[GitCommitAuthor] = []
+        self.reset_calls: list[tuple[str, str]] = []
 
     @property
     def working_dir(self) -> Path:
@@ -49,12 +52,13 @@ class MockGitClient(GitClientInterface):
 
     def push(self, branch_name: str, force: bool = False) -> None:
         self.push_calls.append(branch_name)
+        self.push_calls_with_force.append((branch_name, force))
 
     def configure_identity(self, git_cfg: GitConfig) -> None:
         return None
 
     def get_commit_authors_between(self, base_ref: str, branch_ref: str) -> list[GitCommitAuthor]:
-        return []
+        return list(self.commit_authors_between)
 
     def reset_branch_to_ref(self, branch: str, base_ref: str) -> None:
-        return None
+        self.reset_calls.append((branch, base_ref))
