@@ -2,11 +2,10 @@ import json
 import unittest
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
 
 from splat.config.model import Config, PlatformConfig
-from splat.interface.PackageManagerInterface import PackageManagerInterface
+from splat.git.interface import GitCommitAuthor
 from splat.model import (
     AuditReport,
     Dependency,
@@ -15,13 +14,23 @@ from splat.model import (
     MergeRequest,
     ProjectSummary,
     RemoteProject,
+    RuntimeContext,
     Severity,
+    StatusReport,
     VulnerabilityDetail,
 )
 from splat.package_managers.yarn.YarnPackageManager import YarnPackageManager
 from splat.utils.command_runner.interface import CommandResult
 from splat.utils.project_processor.single_project import process_remote_project
-from tests.mocks import MockCommandRunner, MockFileSystem, MockGitClient, MockGitPlatform, MockLogger
+from tests.mocks import (
+    MockCommandRunner,
+    MockEnvManager,
+    MockFileSystem,
+    MockGitClient,
+    MockGitPlatform,
+    MockLogger,
+    MockNotificationSink,
+)
 
 
 class TestProcessProjectIntegration(unittest.TestCase):
@@ -29,6 +38,13 @@ class TestProcessProjectIntegration(unittest.TestCase):
         self.mock_logger = MockLogger()
         self.mock_command_runner = MockCommandRunner(self.mock_logger)
         self.mock_fs = MockFileSystem()
+        self.mock_env_manager = MockEnvManager()
+        self.mock_ctx = RuntimeContext(
+            logger=self.mock_logger,
+            fs=self.mock_fs,
+            command_runner=self.mock_command_runner,
+            env_manager=self.mock_env_manager,
+        )
         self.project = RemoteProject(
             id=1,
             web_url="mock_web_url",
@@ -37,28 +53,16 @@ class TestProcessProjectIntegration(unittest.TestCase):
             default_branch="main",
         )
         self.project.path = Path("/mock/path/project1/")
-        self.lockfile = Lockfile(path=Path("/mock/path/project1/yarn.lock"), relative_path=Path("yarn.lock"))
+        self.lockfile = Lockfile(path=Path("/mock/path/project1/yarn.lock"), relative_path=Path("/yarn.lock"))
 
-    @patch("splat.utils.project_processor.single_project.get_logfile_url")
-    @patch("splat.utils.project_processor.single_project.shutil.rmtree")
-    @patch.object(PackageManagerInterface, "find_lockfiles")
-    @patch("splat.utils.project_processor.single_project.load_project_config", return_value=None)
-    def test_process_project_with_vulnerabilities(
-        self,
-        _: MagicMock,
-        mock_find_lockfiles: MagicMock,
-        mock_rmtree: MagicMock,
-        mock_get_logfile_url: MagicMock,
-    ) -> None:
+    def test_process_project_with_vulnerabilities(self) -> None:
         global_config = Config()
-        yarn_manager = YarnPackageManager(
-            global_config.package_managers.yarn, self.mock_command_runner, self.mock_fs, self.mock_logger
-        )
+        global_config.general.debug.skip_cleanup = True
+        yarn_manager = YarnPackageManager(global_config.package_managers.yarn, self.mock_ctx)
         mock_git_platform = MockGitPlatform(config=PlatformConfig(type="mock"), projects=[self.project])
 
-        mock_notification_sink = MagicMock()
-        # Mock find_lockfiles to return one lockfile
-        mock_find_lockfiles.return_value = [self.lockfile]
+        mock_notification_sink = MockNotificationSink()
+        self.mock_fs.write(str(self.lockfile.path), "")
 
         git_client = MockGitClient(repo_path=self.project.path)
 
@@ -86,8 +90,6 @@ class TestProcessProjectIntegration(unittest.TestCase):
             args=["upgrade", "package2@3.0.0"],  # Attempting second update
             response=CommandResult(exit_code=1, stdout="", stderr="error"),
         )
-
-        mock_get_logfile_url.return_value = None
 
         # Expected
         expected_files_to_commit = ["/mock/path/project1/yarn.lock", "/mock/path/project1/package.json"]
@@ -126,6 +128,7 @@ class TestProcessProjectIntegration(unittest.TestCase):
             notification_sinks=[mock_notification_sink],  # Mock notification sinks
             global_config=global_config,
             git_client=git_client,
+            ctx=self.mock_ctx,
         )
 
         # Assertions
@@ -137,9 +140,6 @@ class TestProcessProjectIntegration(unittest.TestCase):
         # Assert checks out branch
         self.assertIn(branch_name, git_client.local_branches)
         self.assertEqual(git_client.current_branch, branch_name)
-
-        # Assert Finds lockfiles
-        mock_find_lockfiles.assert_called_once_with(self.project)
 
         # Assert yarn install command
         self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/bin/yarn", args=["install"]))
@@ -159,20 +159,138 @@ class TestProcessProjectIntegration(unittest.TestCase):
 
         # Assert push changes
         self.assertEqual(git_client.push_calls, [branch_name])
+        self.assertEqual(git_client.push_calls_with_force, [(branch_name, True)])
 
         self.assertEqual(len(git_client.discard_calls), 1)
         self.assertIsNone(git_client.discard_calls[0])
 
         # Assert sends notification
-        mock_notification_sink.send_merge_request_notification.assert_called_once_with(
-            merge_request=MergeRequest("Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock"),
-            commit_messages=[commit_message],
-            remaining_vulns=expected_remaining_vulns,
+        self.assertEqual(len(mock_notification_sink.merge_request_notifications), 1)
+        merge_request, commit_messages, remaining_vulns = mock_notification_sink.merge_request_notifications[0]
+        self.assertEqual(
+            merge_request, MergeRequest("Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock")
+        )
+        self.assertEqual(commit_messages, [commit_message])
+        self.assertEqual(remaining_vulns, expected_remaining_vulns)
+
+    def test_process_project_aborts_on_manual_changes_on_branch(
+        self,
+    ) -> None:
+        global_config = Config()
+        global_config.general.debug.skip_cleanup = True
+        notification_sink = MockNotificationSink()
+
+        project = RemoteProject(
+            id=1,
+            web_url="mock_web_url",
+            clone_url="mock_clone_url",
+            name_with_namespace="group/project",
+            default_branch="main",
+        )
+        project.path = Path("/mock/path/manual-changes")
+        git_client = MockGitClient(repo_path=project.path)
+        mock_git_platform = MockGitPlatform(
+            config=PlatformConfig(type="mock"),
+            projects=[project],
+            open_merge_request_url="http://example.com/mr",
         )
 
-        # Assert cleans up the project directory via shutil.rmtree
-        mock_rmtree.assert_called_once_with(self.project.path)
+        branch_name = global_config.general.git.branch_name
+        git_client.remote_branches.add(branch_name)
+        git_client.commit_authors_between = [
+            GitCommitAuthor(name="Jane Doe", email="jane@example.com"),
+        ]
 
+        self.mock_env_manager.set("CI_JOB_URL", "http://example.com/logs")
+        summary_result = process_remote_project(
+            project=project,
+            package_managers=[],
+            git_platform=mock_git_platform,
+            notification_sinks=[notification_sink],
+            global_config=global_config,
+            git_client=git_client,
+            ctx=self.mock_ctx,
+        )
 
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual(len(notification_sink.project_skipped_notifications), 1)
+        _, reason, logfile_url = notification_sink.project_skipped_notifications[0]
+        self.assertIn("Aborted processing project", reason)
+        self.assertEqual(logfile_url, "http://example.com/logs")
+        self.assertEqual(notification_sink.merge_request_notifications, [])
+
+        self.assertEqual(summary_result.status_report, StatusReport.MANUAL_CHANGES.value)
+        self.assertEqual(summary_result.severity_score, "unknown")
+        self.assertEqual(summary_result.mr_url, "http://example.com/mr")
+        self.assertEqual(git_client.reset_calls, [])
+        self.assertEqual(git_client.push_calls_with_force, [])
+
+    def test_process_project_resets_branch_when_only_splat_commits(
+        self,
+    ) -> None:
+        global_config = Config()
+        global_config.general.debug.skip_cleanup = True
+        notification_sink = MockNotificationSink()
+        yarn_manager = YarnPackageManager(global_config.package_managers.yarn, self.mock_ctx)
+
+        project = RemoteProject(
+            id=1,
+            web_url="mock_web_url",
+            clone_url="mock_clone_url",
+            name_with_namespace="group/project",
+            default_branch="main",
+        )
+        project.path = Path("/mock/path/splat-only")
+        lockfile = Lockfile(path=Path("/mock/path/splat-only/yarn.lock"), relative_path=Path("/yarn.lock"))
+        self.mock_fs.write(str(lockfile.path), "")
+
+        git_client = MockGitClient(repo_path=project.path)
+        mock_git_platform = MockGitPlatform(config=PlatformConfig(type="mock"), projects=[project])
+
+        with open("tests/utils/mock_audit_output.json") as file:
+            first_audit_output = json.load(file)
+        with open("tests/utils/mock_re_audit_output.json") as file:
+            re_audit_output = json.load(file)
+
+        mock_first_audit_output = "\n".join(json.dumps(row) for row in first_audit_output)
+        mock_re_audit_output = "\n".join(json.dumps(row) for row in re_audit_output)
+
+        self.mock_command_runner.set_response(
+            cmd="/usr/bin/yarn",
+            args=["audit", "--json"],
+            response=[
+                CommandResult(exit_code=0, stdout=mock_first_audit_output, stderr=""),
+                CommandResult(exit_code=0, stdout=mock_re_audit_output, stderr=""),
+            ],
+        )
+        self.mock_command_runner.set_response(
+            cmd="/usr/bin/yarn",
+            args=["upgrade", "package2@3.0.0"],
+            response=CommandResult(exit_code=1, stdout="", stderr="error"),
+        )
+
+        branch_name = global_config.general.git.branch_name
+        git_client.remote_branches.add(branch_name)
+        git_client.commit_authors_between = [
+            GitCommitAuthor(name="splat-bot", email="splatuser-bot@myorg.com"),
+        ]
+
+        summary_result = process_remote_project(
+            project=project,
+            package_managers=[yarn_manager],
+            git_platform=mock_git_platform,
+            notification_sinks=[notification_sink],
+            global_config=global_config,
+            git_client=git_client,
+            ctx=self.mock_ctx,
+        )
+
+        self.assertEqual(git_client.reset_calls, [(branch_name, project.default_branch)])
+        self.assertEqual(git_client.push_calls_with_force, [(branch_name, True)])
+        self.assertEqual(notification_sink.project_skipped_notifications, [])
+
+        self.assertEqual(len(git_client.commit_calls), 1)
+        self.assertEqual(len(notification_sink.merge_request_notifications), 1)
+
+        self.assertEqual(summary_result.status_report, StatusReport.ERROR.value)
+        self.assertEqual(summary_result.severity_score, "high")
+        self.assertEqual(summary_result.mr_url, "url")

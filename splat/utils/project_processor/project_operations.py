@@ -1,39 +1,41 @@
 import json
-import os
 from dataclasses import asdict
 from pathlib import Path
 
 from splat.git.interface import GitClientInterface
 from splat.interface.GitPlatformInterface import GitPlatformInterface
+from splat.interface.logger import LoggerInterface
 from splat.model import ProjectAuditFixResult, ProjectSummary, RemoteProject, StatusReport
-from splat.utils.logger_config import logger
+from splat.utils.env_manager.interface import EnvManager
+from splat.utils.fs import FileSystemInterface
 from splat.utils.project_processor.project_notifier import ProjectNotifier
 
 
 def export_json_summary(
     project_summaries: list[ProjectSummary],
+    logger: LoggerInterface,
+    fs: FileSystemInterface,
     json_path: Path = Path("dashboard/projects_summary.json"),
 ) -> None:
     logger.debug(f"Exporting Project(s) summary to {json_path}")
     json_path.parent.mkdir(parents=True, exist_ok=True)
     project_summaries_dicts = [asdict(summary) for summary in project_summaries]
-    with open(json_path, "w") as json_file:
-        json.dump(project_summaries_dicts, json_file, indent=2)
+    fs.write(str(json_path), json.dumps(project_summaries_dicts, indent=2))
     logger.info(f"Project(s) summary successfully exported to {json_path}")
 
 
-def get_logfile_url() -> str | None:
+def get_logfile_url(env_manager: EnvManager) -> str | None:
     """Determine the log file url based on the environment (GitLab CI, GitHub Actions, local, etc.)."""
 
     # Check if running in GitLab CI
-    gitlab_job_url = os.getenv("CI_JOB_URL")
+    gitlab_job_url = env_manager.get_optional("CI_JOB_URL")
     if gitlab_job_url:
         return gitlab_job_url
 
     # Check if running in GitHub Actions
-    github_run_url = os.getenv("GITHUB_SERVER_URL")
-    github_repo = os.getenv("GITHUB_REPOSITORY")
-    github_run_id = os.getenv("GITHUB_RUN_ID")
+    github_run_url = env_manager.get_optional("GITHUB_SERVER_URL")
+    github_repo = env_manager.get_optional("GITHUB_REPOSITORY")
+    github_run_id = env_manager.get_optional("GITHUB_RUN_ID")
     if github_run_url and github_repo and github_run_id:
         return f"{github_run_url}/{github_repo}/actions/runs/{github_run_id}"
 
@@ -48,6 +50,7 @@ def handle_commits(
     notifier: ProjectNotifier,
     git_platform: GitPlatformInterface,
     git_client: GitClientInterface,
+    logger: LoggerInterface,
 ) -> tuple[StatusReport, str | None]:
     """Handle the commit actions for remote projects."""
 

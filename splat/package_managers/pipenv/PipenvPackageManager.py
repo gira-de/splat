@@ -1,27 +1,18 @@
 from pathlib import Path
 
 from splat.config.model import PMConfig
-from splat.interface.logger import LoggerInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import AuditReport, DependencyType, Lockfile
+from splat.model import AuditReport, DependencyType, Lockfile, RuntimeContext
 from splat.package_managers.common.pip_audit_parser import parse_pip_audit_output
 from splat.package_managers.pipenv.command_runner import PipenvCommandRunner
 from splat.package_managers.pipenv.pipenv_graph_parser import restructure_audit_reports
 from splat.package_managers.pipenv.pipfile_manager import PipfileManager
 from splat.package_managers.pipenv.repo_manager import PipenvRepoManager
-from splat.utils.command_runner.interface import CommandRunner
-from splat.utils.fs import FileSystemInterface
 
 
 class PipenvPackageManager(PackageManagerInterface):
-    def __init__(
-        self,
-        config: PMConfig,
-        command_runner: CommandRunner | None = None,
-        fs: FileSystemInterface | None = None,
-        logger: LoggerInterface | None = None,
-    ) -> None:
-        super().__init__(config, command_runner, fs, logger)
+    def __init__(self, config: PMConfig, ctx: RuntimeContext) -> None:
+        super().__init__(config, ctx)
         self.pipenv = PipenvCommandRunner(self.command_runner, self.fs, self.logger)
         self.pipfile_manager = PipfileManager(self.fs, self.logger)
         self.repo_manager = PipenvRepoManager(self.env_manager, self.fs, self.logger)

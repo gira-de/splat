@@ -4,7 +4,8 @@ from pydantic import ValidationError
 
 from splat.config.model import PlatformConfig
 from splat.interface.GitPlatformInterface import GitPlatformInterface
-from splat.utils.logger_config import logger
+from splat.interface.logger import LoggerInterface
+from splat.utils.env_manager.interface import EnvManager
 from splat.utils.logging_utils import format_filters_log, log_pydantic_validation_error
 from splat.utils.plugin_initializer.dynamic_import import get_class
 from splat.utils.plugin_initializer.errors import SourceControlConfigError, SourceControlsConfigurationError
@@ -23,7 +24,10 @@ def get_git_platform_class(platform_type: str) -> type[GitPlatformInterface]:
 
 
 def initialize_git_platforms(
-    platforms_configs: list[PlatformConfig], platform_id: str | None = None
+    platforms_configs: list[PlatformConfig],
+    logger: LoggerInterface,
+    env_manager: EnvManager,
+    platform_id: str | None = None,
 ) -> list[GitPlatformInterface]:
     initiated_git_platforms: list[GitPlatformInterface] = []
     formatted_names: list[str] = []
@@ -45,7 +49,9 @@ def initialize_git_platforms(
         formatted_name = f"'{platform_config.type}': '{platform_config.name}'"
         try:
             platform_class = get_git_platform_class(platform_config.type)
-            platform_instance = platform_class.from_platform_config(platform_config)
+            platform_instance = platform_class.from_platform_config(
+                platform_config, logger=logger, env_manager=env_manager
+            )
             initiated_git_platforms.append(platform_instance)
             formatted_names.append(formatted_name)
             filters_log = format_filters_log(platform_config.filters)
@@ -55,6 +61,7 @@ def initialize_git_platforms(
                 error=e,
                 prefix_message=f"Validation error in platform configuration for {platform_config.type}",
                 unparsable_data=None,
+                logger=logger,
             )
             continue
         except Exception as e:

@@ -1,11 +1,13 @@
 import re
 
 from splat.config.model import FiltersConfig
+from splat.interface.logger import LoggerInterface
 from splat.model import RemoteProject
-from splat.utils.logger_config import logger
 
 
-def filter_projects(projects: list[RemoteProject], filters: FiltersConfig | None) -> list[RemoteProject]:
+def filter_projects(
+    projects: list[RemoteProject], filters: FiltersConfig | None, logger: LoggerInterface
+) -> list[RemoteProject]:
     included_projects = projects
     excluded_projects = []
 

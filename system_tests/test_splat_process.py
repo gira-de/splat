@@ -1,14 +1,7 @@
 import os
-import shutil
-import subprocess
 import unittest
-import uuid
-from pathlib import Path
-
-import yaml
 
 from system_tests import (
-    CLONE_DIR,
     GITHUB_PROJECT,
     GITHUB_REPO_OWNER,
     GITLAB_PROJECT,
@@ -17,72 +10,32 @@ from system_tests import (
 from system_tests.api.github import GitHubAPI
 from system_tests.api.gitlab import GitLabAPI
 from system_tests.git_helpers import get_git_log, verify_branch_pushed
-
-
-def log_success(message: str) -> None:
-    print(f"✔ {message}", flush=True)
-
-
-def update_config_with_unique_branch(config_file: Path) -> str:
-    # Generate a unique branch name
-    unique_branch_name = f"splat-{uuid.uuid4().hex[:8]}"
-    # Read and update the config file with the unique branch name
-    with open(config_file, "r") as f:
-        config = yaml.safe_load(f)
-    config["general"]["git"]["branch_name"] = unique_branch_name
-    with open(config_file, "w") as f:
-        yaml.safe_dump(config, f)
-    return unique_branch_name
+from system_tests.test_utils import (
+    cleanup_projects,
+    log_success,
+    run_splat,
+    update_config_with_unique_branch,
+    verify_project_cloned,
+)
 
 
 class TestSplatProcess(unittest.TestCase):
-    def cleanup_projects(self, pl: list[str]) -> None:
-        for project in pl:
-            try:
-                project_path = CLONE_DIR / project.replace("/", "-")
-                shutil.rmtree(project_path)
-            except Exception as e:
-                self.fail(f"Failed to remove project directory {project}: {e}")
-
     @classmethod
     def setUpClass(cls) -> None:
         os.environ["MOCK_AUDIT"] = "true"
         cls.gitlab_api = GitLabAPI()
         cls.github_api = GitHubAPI()
-        config_file = SYSTEM_TESTS_DIR / "splat.yaml"
-        cls.unique_branch_name = update_config_with_unique_branch(config_file)
+        cls.config_file = SYSTEM_TESTS_DIR / "splat.yaml"
+        cls.original_cfg_content = cls.config_file.read_text()
+        cls.unique_branch_name = update_config_with_unique_branch(cls.config_file)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        del os.environ["MOCK_AUDIT"]
+        os.environ.pop("MOCK_AUDIT", None)
+        cls.config_file.write_text(cls.original_cfg_content)
         cls.gitlab_api.cleanup_branch_and_merge_request(GITLAB_PROJECT, cls.unique_branch_name)
         cls.github_api.cleanup_branch_and_pull_request(GITHUB_PROJECT, GITHUB_REPO_OWNER, cls.unique_branch_name)
-        cls().cleanup_projects([GITLAB_PROJECT, GITHUB_PROJECT])
-
-    def run_splat(self) -> str:
-        try:
-            log_success("Executing splat...")
-            res = subprocess.run(
-                ["splat"],
-                cwd=SYSTEM_TESTS_DIR,
-                shell=False,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            return res.stdout + res.stderr
-        except subprocess.CalledProcessError as e:
-            self.fail(f"system test failed: splat command failed with error: {e.stderr}")
-
-    def verify_project_cloned(self, project_name: str) -> Path:
-        project_path = CLONE_DIR / project_name.replace("/", "-")
-        self.assertTrue(
-            project_path.exists() and project_path.is_dir(),
-            f"Expected cloned project directory '{project_path}' does not exist.",
-        )
-        log_success(f"Verified that project {project_name} has been cloned")
-        return project_path
+        cleanup_projects([GITLAB_PROJECT, GITHUB_PROJECT])
 
     def assert_in_no_log(self, expected, actual, message=None):
         """Custom assertIn to suppress log dumping in failure"""
@@ -91,11 +44,11 @@ class TestSplatProcess(unittest.TestCase):
             raise AssertionError(msg)
 
     def test_splat_process_remote_projects(self) -> None:
-        logs = self.run_splat()
+        logs = run_splat(SYSTEM_TESTS_DIR)
 
         try:
-            gitlab_project_path = self.verify_project_cloned(GITLAB_PROJECT)
-            github_project_path = self.verify_project_cloned(GITHUB_PROJECT)
+            gitlab_project_path = verify_project_cloned(GITLAB_PROJECT)
+            github_project_path = verify_project_cloned(GITHUB_PROJECT)
 
             expected_commit_messages = [
                 "fix: Security: Update requests from 2.31.0 to 2.32.0 in /pipenv-project/Pipfile.lock",

@@ -5,6 +5,19 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import NamedTuple
 
+from splat.interface.logger import LoggerInterface
+from splat.utils.command_runner.interface import CommandRunner
+from splat.utils.env_manager.interface import EnvManager
+from splat.utils.fs import FileSystemInterface
+
+
+@dataclass(frozen=True)
+class RuntimeContext:
+    logger: LoggerInterface
+    fs: FileSystemInterface
+    command_runner: CommandRunner
+    env_manager: EnvManager
+
 
 @dataclass
 class Project:

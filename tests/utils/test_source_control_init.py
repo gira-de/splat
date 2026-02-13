@@ -7,9 +7,14 @@ from splat.utils.plugin_initializer.source_control_init import (
     get_git_platform_class,
     initialize_git_platforms,
 )
+from tests.mocks import MockEnvManager, MockLogger
 
 
 class TestGitPlatformInitializer(unittest.TestCase):
+    def setUp(self) -> None:
+        self.logger = MockLogger()
+        self.env_manager = MockEnvManager()
+
     @patch("splat.utils.plugin_initializer.source_control_init.get_class")
     def test_get_git_platform_class_valid_type(self, mock_get_class: MagicMock) -> None:
         # Setup mock class
@@ -39,60 +44,43 @@ class TestGitPlatformInitializer(unittest.TestCase):
         )
 
     def test_initialize_git_platforms_with_empty_configs(self) -> None:
-        # Test with empty config
-        empty_config: list[PlatformConfig] = []
         with self.assertRaises(Exception):
-            platform_interfaces = initialize_git_platforms(empty_config)
-            self.assertEqual(platform_interfaces, [])
-
-    @patch("splat.utils.plugin_initializer.source_control_init.logger")
-    def test_initialize_git_platforms_initializes_a_platform_and_logs_correct_information(
-        self, mock_logger: MagicMock
-    ) -> None:
-        valid_config = PlatformConfig(
-            type="github",
-            domain="mock_domain",
-            access_token="mock_access",
-        )  # nosec
-        platform_interfaces = initialize_git_platforms([valid_config])
-
-        # Assertions
-        self.assertEqual(len(platform_interfaces), 1)
-        mock_logger.debug.assert_called_once_with(
-            "Source control platform 'github': '' configured successfully with no filters."
-        )
-        mock_logger.info.assert_called_with("Configured 1 source control platforms:'github': ''")
+            initialize_git_platforms([], self.logger, self.env_manager)
 
     @patch("splat.utils.plugin_initializer.source_control_init.get_git_platform_class")
-    @patch("splat.utils.plugin_initializer.source_control_init.logger")
-    def test_initialize_git_platforms_handles_exceptions(
-        self, mock_logger: MagicMock, mock_get_git_platform_class: MagicMock
+    def test_initialize_git_platforms_initializes_a_platform_and_logs_correct_information(
+        self, mock_get_git_platform_class: MagicMock
     ) -> None:
-        # Setup to raise an exception
+        mock_platform_class = MagicMock(spec=GitPlatformInterface)
+        mock_platform_instance = MagicMock(spec=GitPlatformInterface)
+        mock_get_git_platform_class.return_value = mock_platform_class
+        mock_platform_class.from_platform_config.return_value = mock_platform_instance
+
+        valid_config = PlatformConfig(type="github")
+        platform_interfaces = initialize_git_platforms([valid_config], self.logger, self.env_manager)
+
+        self.assertEqual(len(platform_interfaces), 1)
+        mock_platform_class.from_platform_config.assert_called_once_with(
+            valid_config, logger=self.logger, env_manager=self.env_manager
+        )
+        self.assertTrue(
+            self.logger.has_logged(
+                [
+                    "DEBUG: Source control platform 'github': '' configured successfully with no filters.",
+                    "INFO: Configured 1 source control platforms:'github': ''",
+                ]
+            )
+        )
+
+    @patch("splat.utils.plugin_initializer.source_control_init.get_git_platform_class")
+    def test_initialize_git_platforms_handles_exceptions(self, mock_get_git_platform_class: MagicMock) -> None:
         mock_get_git_platform_class.side_effect = Exception("Test Exception")
 
-        config_with_error = PlatformConfig(type="github")
         with self.assertRaises(Exception):
-            initialize_git_platforms([config_with_error])
+            initialize_git_platforms([PlatformConfig(type="github")], self.logger, self.env_manager)
 
-        mock_logger.error.assert_called_once_with(
-            "Error configuring source control platform: 'github': '': Test Exception"
-        )
-
-    @patch("splat.utils.logging_utils.logger.error")
-    def test_initialize_git_platforms_handles_validation_error(self, mock_logger_error: MagicMock) -> None:
-        invalid_config = PlatformConfig(
-            type="github",
-            domain="invalid_domain",
-        )
-
-        with self.assertRaises(Exception):
-            platform_interfaces = initialize_git_platforms([invalid_config])
-            # Assertions: No platforms should be initialized, and an error should be logged
-            self.assertEqual(platform_interfaces, [])
-
-        mock_logger_error.assert_called_once_with(
-            "Validation error in platform configuration for github: Field 'access_token' - Field required"
+        self.assertTrue(
+            self.logger.has_logged("Error configuring source control platform: 'github': '': Test Exception")
         )
 
 

@@ -1,13 +1,21 @@
 from splat.config.model import PlatformConfig
 from splat.interface.GitPlatformInterface import GitPlatformInterface
+from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
+from splat.utils.env_manager.interface import EnvManager
 
 
 class MockGitPlatform(GitPlatformInterface):
-    def __init__(self, config: PlatformConfig, projects: list[RemoteProject]) -> None:
+    def __init__(
+        self,
+        config: PlatformConfig,
+        projects: list[RemoteProject],
+        open_merge_request_url: str | None = "",
+    ) -> None:
         super().__init__(config)
         self._id = "mock_id"
         self.projects = projects
+        self.open_merge_request_url = open_merge_request_url
 
     @property
     def type(self) -> str:
@@ -34,7 +42,9 @@ class MockGitPlatform(GitPlatformInterface):
         return "mock_token"
 
     @classmethod
-    def from_platform_config(cls, platform_config: PlatformConfig) -> GitPlatformInterface:
+    def from_platform_config(
+        cls, platform_config: PlatformConfig, logger: LoggerInterface, env_manager: EnvManager
+    ) -> GitPlatformInterface:
         return MockGitPlatform(PlatformConfig(type="mock"), [])
 
     def fetch_projects(self, project_id: str | None = None, timeout: float = 60.0) -> list[RemoteProject]:
@@ -51,4 +61,4 @@ class MockGitPlatform(GitPlatformInterface):
         return MergeRequest(title, "url", "project_url", "project_name", self.merge_request_type)
 
     def get_open_merge_request_url(self, project: RemoteProject, branch_name: str, timeout: int = 10) -> str | None:
-        return ""
+        return self.open_merge_request_url

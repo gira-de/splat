@@ -1,26 +1,17 @@
 from pathlib import Path
 
 from splat.config.model import PMConfig
-from splat.interface.logger import LoggerInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import AuditReport, DependencyType, Lockfile
+from splat.model import AuditReport, DependencyType, Lockfile, RuntimeContext
 from splat.package_managers.yarn.audit_parser import parse_yarn_audit_output
 from splat.package_managers.yarn.command_runner import YarnCommandRunner
 from splat.package_managers.yarn.package_json_manager import PackageJsonManager
 from splat.package_managers.yarn.repo_manager import YarnRepoManager
-from splat.utils.command_runner.interface import CommandRunner
-from splat.utils.fs import FileSystemInterface
 
 
 class YarnPackageManager(PackageManagerInterface):
-    def __init__(
-        self,
-        config: PMConfig,
-        command_runner: CommandRunner | None = None,
-        fs: FileSystemInterface | None = None,
-        logger: LoggerInterface | None = None,
-    ) -> None:
-        super().__init__(config, command_runner, fs, logger)
+    def __init__(self, config: PMConfig, ctx: RuntimeContext) -> None:
+        super().__init__(config, ctx)
         self.yarn = YarnCommandRunner(self.command_runner, self.logger)
         self.package_manager = PackageJsonManager(self.fs, self.logger)
         self.repo_manager = YarnRepoManager(self.env_manager, self.fs, self.logger)
@@ -46,7 +37,7 @@ class YarnPackageManager(PackageManagerInterface):
 
     def audit(self, lockfile: Lockfile, re_audit: bool = False) -> list[AuditReport]:
         audit_output = self.run_audit_command(lockfile.path.parent, re_audit)
-        return parse_yarn_audit_output(audit_output, lockfile)
+        return parse_yarn_audit_output(audit_output, lockfile, self.logger)
 
     def update(self, vuln_report: AuditReport) -> list[str]:
         init_log_msg = f"""{vuln_report.dep.name} from {vuln_report.dep.version} to {vuln_report.fixed_version} in {
