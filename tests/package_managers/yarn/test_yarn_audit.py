@@ -10,9 +10,7 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestYarnAudit(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.yarn_manager = YarnPackageManager(
-            self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger
-        )
+        self.yarn_manager = YarnPackageManager(self.mock_config, self.mock_ctx)
 
         self.mock_yarn_audit_out_no_vulns = json.dumps(
             {"advisories": [], "dependencies": [{"name": "package1", "version": "1.0.0", "vulns": []}]}

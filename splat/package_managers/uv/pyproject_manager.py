@@ -3,11 +3,11 @@ import re
 import toml
 
 from splat.model import Dependency, DependencyType
-from splat.utils.fs import FileSystemInterface, RealFileSystem
+from splat.utils.fs import FileSystemInterface
 
 
 class UvPyprojectManager:
-    def __init__(self, fs: FileSystemInterface = RealFileSystem()) -> None:
+    def __init__(self, fs: FileSystemInterface) -> None:
         self.fs = fs
 
     def get_direct_deps(self, pyproject_path: str) -> list[Dependency]:

@@ -2,10 +2,12 @@ from pathlib import Path
 
 from splat.config.config_loader import load_config
 from splat.git.gitpython_client import GitPythonClient
-from splat.model import LocalProject
+from splat.model import LocalProject, RuntimeContext
 from splat.source_control.gitlab.ci_artifact_fetch import fetch_gitlab_ci_summary_artifact
+from splat.utils.command_runner.real_runner import SubprocessCommandRunner
 from splat.utils.env_manager.os import OsEnvManager
-from splat.utils.logger_config import default_logger, logger
+from splat.utils.fs import RealFileSystem
+from splat.utils.logger_config import RealLogger
 from splat.utils.logging_utils import generate_banner
 from splat.utils.parseargs import parse_arguments
 from splat.utils.project_processor.project_operations import get_logfile_url
@@ -15,15 +17,26 @@ from splat.utils.project_processor.single_project import process_local_project
 
 def main() -> None:
     notification_sinks = None
+    logger = RealLogger(context="splat")
+    os_env = OsEnvManager(logger)
+    fs = RealFileSystem()
+    subprocess_cr = SubprocessCommandRunner(logger)
+
     try:
         splat_banner = generate_banner("Splat")
         print(splat_banner)
 
         args = parse_arguments()
         if args.gitlab_ci_fetch_summary and args.access_token_name:
-            fetch_gitlab_ci_summary_artifact(args.access_token_name, OsEnvManager())
+            fetch_gitlab_ci_summary_artifact(args.access_token_name, os_env, fs, logger)
         else:
-            config = load_config()
+            config = load_config(Path("splat.yaml"), logger, fs)
+            runtime_ctx = RuntimeContext(
+                logger=logger,
+                fs=fs,
+                command_runner=subprocess_cr,
+                env_manager=os_env,
+            )
 
             if args.local_projects is not None:
                 for local_project in args.local_projects:
@@ -31,17 +44,18 @@ def main() -> None:
                     process_local_project(
                         project=LocalProject(name_with_namespace=local_project.name, path=project_path),
                         config=config,
-                        git_client=GitPythonClient(str(project_path), default_logger),
+                        git_client=GitPythonClient(str(project_path), logger),
+                        ctx=runtime_ctx,
                     )
             elif args.project_id:
-                process_project_with_id(args, config)
+                process_project_with_id(args, config, runtime_ctx)
             else:
-                process_remote_projects(args, config)
+                process_remote_projects(args, config, runtime_ctx)
     except Exception as e:
         logger.update_context()
         logger.error(f"An error occurred: {e}")
 
-        logfile_url = get_logfile_url()
+        logfile_url = get_logfile_url(os_env)
 
         if notification_sinks and logfile_url:
             for sink in notification_sinks:

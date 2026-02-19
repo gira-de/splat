@@ -5,15 +5,14 @@ from splat.interface.logger import LoggerInterface
 from splat.utils.command_runner.interface import CommandResult, CommandRunner
 from splat.utils.command_runner.safe_run import is_command_whitelisted
 from splat.utils.errors import CommandExecutionError
-from splat.utils.logger_config import default_logger
 
 PIPE = subprocess.PIPE
 CompletedProcess = subprocess.CompletedProcess
 
 
 class SubprocessCommandRunner(CommandRunner):
-    def __init__(self, logger: LoggerInterface | None = None) -> None:
-        self.logger = logger or default_logger
+    def __init__(self, logger: LoggerInterface) -> None:
+        self.logger = logger
         super().__init__(self.logger)
 
     def run(

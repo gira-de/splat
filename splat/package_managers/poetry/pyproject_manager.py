@@ -4,12 +4,11 @@ import tomlkit
 from splat.interface.logger import LoggerInterface
 from splat.model import Dependency
 from splat.package_managers.common.dependency_utils import extract_deps_from_section
-from splat.utils.fs import FileSystemInterface, RealFileSystem
-from splat.utils.logger_config import default_logger
+from splat.utils.fs import FileSystemInterface
 
 
 class PoetryPyprojectManager:
-    def __init__(self, fs: FileSystemInterface = RealFileSystem(), logger: LoggerInterface = default_logger) -> None:
+    def __init__(self, fs: FileSystemInterface, logger: LoggerInterface) -> None:
         self.fs = fs
         self.logger = logger
 

@@ -1,72 +1,51 @@
 import logging
 import sys
-from typing import TYPE_CHECKING, Any
 
 from splat.config.model import LogLevel
 from splat.interface.logger import LoggerInterface
 
-if TYPE_CHECKING:
-    _LoggerAdapter = logging.LoggerAdapter[logging.Logger]
-else:
-    _LoggerAdapter = logging.LoggerAdapter
+_DEFAULT_FORMAT = "[%(asctime)s] %(levelname)-5s -- %(message)s"
+_DEFAULT_DATEFMT = "%Y-%m-%d %H:%M:%S %z"
 
 
-# --- Real Logger Implementation ---
-class ContextLoggerAdapter(_LoggerAdapter, LoggerInterface):
-    def __init__(self, logger: logging.Logger, context: str):
-        super().__init__(logger, {})
-        self.context = context
-
-    def process(self, msg: str, kwargs: Any) -> tuple[str, Any]:
-        return f"[{self.context}] {msg}", kwargs
+class RealLogger(LoggerInterface):
+    def __init__(self, logger: logging.Logger | None = None, context: str = "splat") -> None:
+        self._logger = logger or logging.getLogger("splat")
+        self._context = context
+        self.update_log_level(LogLevel.INFO)
 
     def update_context(self, new_context: str = "splat") -> None:
-        self.context = new_context
+        self._context = new_context
+
+    def _with_context(self, msg: str) -> str:
+        return f"[{self._context}] {msg}"
+
+    def info(self, msg: str) -> None:
+        self._logger.info(self._with_context(msg))
+
+    def debug(self, msg: str) -> None:
+        self._logger.debug(self._with_context(msg))
+
+    def warning(self, msg: str) -> None:
+        self._logger.warning(self._with_context(msg))
+
+    def error(self, msg: str) -> None:
+        self._logger.error(self._with_context(msg))
+
+    def update_log_level(self, log_level: LogLevel) -> None:
+        self._logger.setLevel(log_level.value)
+        _clear_handlers(self._logger)
+        _add_console_handler(self._logger, log_level)
 
 
-class LoggerManager:
-    def __init__(self, name: str):
-        self.base_name = name
-        self.default_format = "[%(asctime)s] %(levelname)-5s -- %(message)s"
-        self.default_datefmt = "%Y-%m-%d %H:%M:%S %z"
-        self.loggers: dict[str, ContextLoggerAdapter] = {}
-
-    def setup_logger(self, plugin_name: str = "splat", log_level: LogLevel = LogLevel.INFO) -> ContextLoggerAdapter:
-        logger = logging.getLogger(f"{self.base_name}.{plugin_name}")
-        logger.setLevel(log_level.value)
-        self._clear_handlers(logger)
-        self._add_console_handler(logger, log_level)
-
-        adapter = ContextLoggerAdapter(logger, plugin_name)
-        self.loggers[plugin_name] = adapter
-        return adapter
-
-    def _clear_handlers(self, logger: logging.Logger) -> None:
-        while logger.handlers:
-            logger.removeHandler(logger.handlers[0])
-
-    def _add_console_handler(self, logger: logging.Logger, log_level: LogLevel) -> None:
-        formatter = logging.Formatter(self.default_format, datefmt=self.default_datefmt)
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
-        console_handler.setLevel(log_level.value)
-        logger.addHandler(console_handler)
-
-    def update_logger_level(self, log_level: LogLevel) -> None:
-        for _, adapter in self.loggers.items():
-            logger = adapter.logger
-            logger.setLevel(log_level.value)
-            self._clear_handlers(logger)
-            self._add_console_handler(logger, log_level)
-
-    def get_logger(self, plugin_name: str = "splat") -> ContextLoggerAdapter:
-        if plugin_name not in self.loggers:
-            return self.setup_logger(plugin_name)
-        return self.loggers[plugin_name]
+def _clear_handlers(target_logger: logging.Logger) -> None:
+    while target_logger.handlers:
+        target_logger.removeHandler(target_logger.handlers[0])
 
 
-logger_manager = LoggerManager("Splat-logger")
-
-# Initial setup
-logger = logger_manager.setup_logger()  # TODO: replace usage by default_logger
-default_logger: LoggerInterface = logger_manager.get_logger("splat")
+def _add_console_handler(target_logger: logging.Logger, log_level: LogLevel) -> None:
+    formatter = logging.Formatter(_DEFAULT_FORMAT, datefmt=_DEFAULT_DATEFMT)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(log_level.value)
+    target_logger.addHandler(console_handler)

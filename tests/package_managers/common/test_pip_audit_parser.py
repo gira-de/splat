@@ -16,6 +16,7 @@ from tests.mocks import MockLogger
 
 class TestPipAuditOutput(unittest.TestCase):
     def setUp(self) -> None:
+        self.logger = MockLogger()
         self.lockfile = Lockfile(
             path=Path("/path/to/project/example.lock"),
             relative_path=Path("/example.lock"),
@@ -33,6 +34,7 @@ class TestPipAuditOutput(unittest.TestCase):
             self.mock_pip_audit_output,
             self.direct_deps,
             self.lockfile,
+            self.logger,
         )
 
         expected_audit_report = [
@@ -99,6 +101,7 @@ class TestPipAuditOutput(unittest.TestCase):
             mock_no_vulns_output,
             self.direct_deps,
             self.lockfile,
+            self.logger,
         )
 
         self.assertEqual(result, [])
@@ -133,6 +136,7 @@ class TestPipAuditOutput(unittest.TestCase):
             mock_no_fix_version_output,
             self.direct_deps,
             self.lockfile,
+            self.logger,
         )
 
         expected_direct_report = [
@@ -162,10 +166,9 @@ class TestPipAuditOutput(unittest.TestCase):
 
     def test_parse_pip_audit_output_handles_validation_error(self) -> None:
         mock_audit_output = "invalid json"
-        mock_logger = MockLogger()
         with self.assertRaises(RuntimeError):
-            parse_pip_audit_output(mock_audit_output, self.direct_deps, self.lockfile, mock_logger)
-        self.assertTrue(mock_logger.has_logged("ERROR: Pip Audit output Validation Failed: Error - Invalid JSON"))
+            parse_pip_audit_output(mock_audit_output, self.direct_deps, self.lockfile, self.logger)
+        self.assertTrue(self.logger.has_logged("ERROR: Pip Audit output Validation Failed: Error - Invalid JSON"))
 
 
 if __name__ == "__main__":

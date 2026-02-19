@@ -1,14 +1,11 @@
 import requests
 
 from splat.interface.APIClient import JSON, APIClient
-from splat.utils.logger_config import ContextLoggerAdapter
-from splat.utils.logger_config import logger as github_api_logger
+from splat.interface.logger import LoggerInterface
 
 
 class GitHubAPI(APIClient):
-    def __init__(
-        self, domain: str, access_token: str, timeout: float = 60, logger: ContextLoggerAdapter = github_api_logger
-    ):
+    def __init__(self, domain: str, access_token: str, logger: LoggerInterface, timeout: float = 60):
         super().__init__(timeout)
         self.api_base_url = "https://api.github.com" if domain == "https://github.com" else f"{domain}/api/v3"
         self.headers = {

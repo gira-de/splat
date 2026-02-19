@@ -1,5 +1,6 @@
 from splat.interface.APIClient import JSON
 from splat.source_control.github.api import GitHubAPI
+from tests.mocks.mock_logger import MockLogger
 
 
 class MockGitHubAPI(GitHubAPI):
@@ -9,7 +10,7 @@ class MockGitHubAPI(GitHubAPI):
         access_token: str = "dummy",  # nosec
         timeout: float = 10.0,
     ) -> None:
-        super().__init__(domain, access_token, timeout=timeout)
+        super().__init__(domain, access_token, logger=MockLogger(), timeout=timeout)
         self._get_request_responses: list[JSON] | None = None
         self._get_request_response: JSON | None = None
         self._get_request_error: Exception | None = None

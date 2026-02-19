@@ -11,9 +11,7 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestPoetryAudit(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.poetry_manager = PoetryPackageManager(
-            self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger
-        )
+        self.poetry_manager = PoetryPackageManager(self.mock_config, self.mock_ctx)
 
         self.mock_pyproject_content = toml.dumps({"tool": {"poetry": {"dependencies": {"package1": ">=1.0.0"}}}})
         self.mock_fs.write("/path/to/project/pyproject.toml", self.mock_pyproject_content)

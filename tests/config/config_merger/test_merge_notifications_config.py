@@ -5,12 +5,19 @@ from unittest.mock import MagicMock, patch
 from splat.config.config_merger import _merge_notifications_config
 from splat.config.model import LocalNotificationSinksConfig, SinkConfig
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
-from tests.mocks import MockLogger
+from splat.model import RuntimeContext
+from tests.mocks import MockEnvManager, MockLogger
 
 
 class TestMergeNotificationsConfig(unittest.TestCase):
     def setUp(self) -> None:
         self.mock_logger = MockLogger()
+        self.mock_ctx = RuntimeContext(
+            logger=self.mock_logger,
+            fs=MagicMock(),
+            command_runner=MagicMock(),
+            env_manager=MockEnvManager(),
+        )
         self.global_notification_sinks = [
             cast(NotificationSinksInterface, MagicMock(type="GlobalSink1")),
             cast(NotificationSinksInterface, MagicMock(type="GlobalSink2")),
@@ -18,7 +25,7 @@ class TestMergeNotificationsConfig(unittest.TestCase):
 
     def test_merge_notifications_config_when_no_local_config_is_present(self) -> None:
         result_sinks = _merge_notifications_config(
-            self.global_notification_sinks, LocalNotificationSinksConfig(), self.mock_logger
+            self.global_notification_sinks, LocalNotificationSinksConfig(), self.mock_ctx
         )
         self.assertEqual(result_sinks, self.global_notification_sinks)
         self.assertTrue(self.mock_logger.has_logged("INFO: No notification was configured. Skipping notifications.."))
@@ -35,7 +42,7 @@ class TestMergeNotificationsConfig(unittest.TestCase):
             sinks=[SinkConfig(type="LocalSink1")],
         )
 
-        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_logger)
+        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_ctx)
         self.assertEqual(len(self.global_notification_sinks), 2)
         self.assertIsNotNone(result_sinks)
         if result_sinks is not None:
@@ -55,7 +62,7 @@ class TestMergeNotificationsConfig(unittest.TestCase):
             use_global_config=False,
             sinks=[SinkConfig(type="LocalSink1")],
         )
-        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_logger)
+        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_ctx)
         self.assertEqual(len(self.global_notification_sinks), 2)
         self.assertIsNotNone(result_sinks)
         if result_sinks is not None:
@@ -72,7 +79,7 @@ class TestMergeNotificationsConfig(unittest.TestCase):
 
         local_config = LocalNotificationSinksConfig(use_global_config=True, sinks=[])
 
-        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_logger)
+        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_ctx)
 
         self.assertEqual(len(self.global_notification_sinks), 2)
         self.assertIsNotNone(result_sinks)
@@ -90,7 +97,7 @@ class TestMergeNotificationsConfig(unittest.TestCase):
 
         local_config = LocalNotificationSinksConfig(use_global_config=False, sinks=[])
 
-        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_logger)
+        result_sinks = _merge_notifications_config(self.global_notification_sinks, local_config, self.mock_ctx)
         self.assertEqual(len(self.global_notification_sinks), 2)
         self.assertIsNotNone(result_sinks)
         if result_sinks is not None:

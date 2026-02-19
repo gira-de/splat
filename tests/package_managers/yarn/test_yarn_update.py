@@ -12,19 +12,24 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestYarnUpdateDeps(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.manager = YarnPackageManager(self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger)
+        self.manager = YarnPackageManager(self.mock_config, self.mock_ctx)
 
     def test_yarn_update_direct_dependency_calls_upgrade_and_returns_files_to_commit(self) -> None:
         files_to_commit = self.manager.update(self.audit_report)
+        dep_name = self.audit_report.dep.name
+        dep_version = self.audit_report.dep.version
+        fix_version = self.audit_report.fixed_version
 
         self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/bin/yarn", args=["upgrade", "package1@2.0.0"]))
-        self.mock_logger.has_logged(
-            f"[INFO] Updating dependency: {self.audit_report.dep.name} from {self.audit_report.dep.version} "
-            f"to {self.audit_report.fixed_version} in {self.lockfile.relative_path}"
-        )
-        self.mock_logger.has_logged(
-            f"[INFO] Successfully updated dependency: {self.audit_report.dep.name} from {self.audit_report.dep.version}"
-            f" to {self.audit_report.fixed_version} in {self.lockfile.relative_path}"
+        self.assertTrue(
+            self.mock_logger.has_logged(
+                [
+                    f"INFO: Updating dependency: {dep_name} from {dep_version} "
+                    f"to {fix_version} in {self.lockfile.relative_path}",
+                    f"INFO: Successfully updated dependency: {dep_name} from {dep_version}"
+                    f" to {fix_version} in {self.lockfile.relative_path}",
+                ]
+            )
         )
         self.assertEqual(
             files_to_commit,
@@ -45,10 +50,15 @@ class TestYarnUpdateDeps(BasePackageManagerTest):
         self.assertEqual(
             package_json_content["resolutions"].get(self.audit_report.dep.name), f"^{self.audit_report.fixed_version}"
         )
-        self.mock_logger.has_logged(("[INFO] Running 'yarn install' to apply resolutions"))
-        self.mock_logger.has_logged(
-            f"[INFO] Successfully updated sub-dependency: {self.audit_report.dep.name} from "
-            f"{self.audit_report.dep.version} to {self.audit_report.fixed_version} in {self.lockfile.relative_path}"
+        self.assertTrue(
+            self.mock_logger.has_logged(
+                [
+                    "DEBUG: Running 'yarn install' to apply resolutions",
+                    f"INFO: Successfully updated sub-dependency: {self.audit_report.dep.name} from "
+                    f"{self.audit_report.dep.version} to {self.audit_report.fixed_version} in "
+                    f"{self.lockfile.relative_path}",
+                ]
+            )
         )
 
         self.assertTrue(self.mock_command_runner.has_called(cmd="/usr/bin/yarn", args=["install"]))

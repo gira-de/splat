@@ -24,9 +24,7 @@ def _get_severity_enum(severity_str: str) -> Severity:
     return severity_map.get(severity_str.lower(), Severity.UNKNOWN)
 
 
-def parse_yarn_audit_output(
-    output: str, lockfile: Lockfile, logger: LoggerInterface | None = None
-) -> list[AuditReport]:
+def parse_yarn_audit_output(output: str, lockfile: Lockfile, logger: LoggerInterface) -> list[AuditReport]:
     """
     Parses the output from `yarn audit --json` and extracts information about each vulnerability,
     returning a list of AuditReport instances.

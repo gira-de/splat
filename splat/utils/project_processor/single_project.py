@@ -12,16 +12,21 @@ from splat.git.utils import is_splat_author
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import LocalProject, ProjectSummary, RemoteProject, Severity, StatusReport
-from splat.utils.logger_config import logger, logger_manager
+from splat.model import LocalProject, ProjectSummary, RemoteProject, RuntimeContext, Severity, StatusReport
 from splat.utils.plugin_initializer.package_managers_init import initialize_package_managers
 from splat.utils.project_processor.audit_fixer import audit_and_fix_project
 from splat.utils.project_processor.project_notifier import ProjectNotifier
 from splat.utils.project_processor.project_operations import get_logfile_url, handle_commits
 
 
-def process_local_project(project: LocalProject, config: Config, git_client: GitClientInterface) -> None:
-    package_managers = initialize_package_managers(config.package_managers)
+def process_local_project(
+    project: LocalProject,
+    config: Config,
+    git_client: GitClientInterface,
+    ctx: RuntimeContext,
+) -> None:
+    logger = ctx.logger
+    package_managers = initialize_package_managers(config.package_managers, ctx)
     branch_name = config.general.git.branch_name
     try:
         if git_client.is_dirty(include_untracked=True):
@@ -39,7 +44,7 @@ def process_local_project(project: LocalProject, config: Config, git_client: Git
     else:
         git_client.create_branch(branch_name)
     try:
-        audit_and_fix_project(project, package_managers, config, git_client)
+        audit_and_fix_project(project, package_managers, config, git_client, logger)
     except Exception as e:
         logger.error(f"Error processing local project '{project.name_with_namespace}': {str(e)}")
 
@@ -50,8 +55,10 @@ def clone_and_process_project(
     git_platform: GitPlatformInterface,
     notification_sinks: list[NotificationSinksInterface],
     global_config: Config,
+    ctx: RuntimeContext,
 ) -> ProjectSummary:
     try:
+        logger = ctx.logger
         project_clone_dir = Path(global_config.general.git.clone_dir).resolve() / project.name_with_namespace.replace(
             "/", "-"
         )
@@ -60,15 +67,26 @@ def clone_and_process_project(
             shutil.rmtree(project_clone_dir)
         clone_url_with_token = project.clone_url.replace("https://", f"https://oauth2:{git_platform.access_token}@")
         git_client = GitPythonClient.clone(
-            url=clone_url_with_token, to_path=project_clone_dir, no_single_branch=True, depth=1
+            url=clone_url_with_token,
+            to_path=project_clone_dir,
+            logger=logger,
+            no_single_branch=True,
+            depth=1,
         )
         project.path = project_clone_dir
         return process_remote_project(
-            project, package_managers, git_platform, notification_sinks, global_config, git_client
+            project,
+            package_managers,
+            git_platform,
+            notification_sinks,
+            global_config,
+            git_client,
+            ctx=ctx,
         )
     except Exception as e:
         logger.error(f"An Error Occured while processing Project {project.name_with_namespace} : {e}")
         time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
+        log_file_url = get_logfile_url(ctx.env_manager)
         return ProjectSummary(
             project_name=project.name_with_namespace,
             time_stamp=time_stamp,
@@ -76,7 +94,7 @@ def clone_and_process_project(
             status_report=StatusReport.ERROR.value,
             severity_score=None,
             mr_url=None,
-            logfile_url=get_logfile_url(),
+            logfile_url=log_file_url,
         )
 
 
@@ -87,26 +105,28 @@ def process_remote_project(
     notification_sinks: list[NotificationSinksInterface],
     global_config: Config,
     git_client: GitClientInterface,
+    ctx: RuntimeContext,
 ) -> ProjectSummary:
+    logger = ctx.logger
     logger.info(f"Processing Project: {project.name_with_namespace}")
     logger.update_context(f"splat -> {project.name_with_namespace}")
-    local_config = load_project_config(project.path / "splat.yaml")
+    local_config = load_project_config(project.path / "splat.yaml", logger, fs=ctx.fs)
     if local_config is not None:
         (merged_config, notification_sinks, package_managers) = merge_configs(
-            global_config, local_config, notification_sinks, package_managers
+            global_config, local_config, notification_sinks, package_managers, ctx=ctx
         )
     else:
         merged_config = global_config
 
-    notifier = ProjectNotifier(project, notification_sinks)
-    logger_manager.update_logger_level(merged_config.general.logging.level)
+    notifier = ProjectNotifier(project, notification_sinks, logger)
+    logger.update_log_level(merged_config.general.logging.level)
     git_client.configure_identity(merged_config.general.git)
 
     branch_name = merged_config.general.git.branch_name
     default_branch = project.default_branch
     severity_score = Severity.UNKNOWN
     mr_url = None
-    logfile_url = get_logfile_url()
+    logfile_url = get_logfile_url(ctx.env_manager)
 
     def _remove_project_dir() -> None:
         if not merged_config.general.debug.skip_cleanup:
@@ -150,11 +170,11 @@ def process_remote_project(
         git_client.reset_branch_to_ref(branch_name, default_branch)
     try:
         audit_fix_result = audit_and_fix_project(
-            project, package_managers, merged_config, git_client, notifier.notify_failure
+            project, package_managers, merged_config, git_client, logger, notifier.notify_failure
         )
         severity_score = audit_fix_result.severity_score
         status_report, mr_url = handle_commits(
-            project, audit_fix_result, branch_name, notifier, git_platform, git_client
+            project, audit_fix_result, branch_name, notifier, git_platform, git_client, logger
         )
 
     except Exception as e:

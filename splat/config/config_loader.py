@@ -6,12 +6,13 @@ from pydantic import ValidationError
 
 from splat.config.model import Config, LocalConfig
 from splat.interface.logger import LoggerInterface
-from splat.utils.fs import FileSystemInterface, RealFileSystem
-from splat.utils.logger_config import default_logger, logger, logger_manager
+from splat.utils.fs import FileSystemInterface
 from splat.utils.logging_utils import log_general_config, log_hooks_config, log_pydantic_validation_error
 
 
-def load_yaml_file(file_path: Path, fs: FileSystemInterface, raise_on_error: bool = True) -> dict[str, str]:
+def load_yaml_file(
+    file_path: Path, fs: FileSystemInterface, logger: LoggerInterface, raise_on_error: bool = True
+) -> dict[str, str]:
     try:
         content = fs.read(str(file_path))
         yaml_content = yaml.safe_load(content)
@@ -45,39 +46,26 @@ def validate_config(
         return None
 
 
-def load_config(
-    config_path: Path = Path("splat.yaml"),
-    logger: LoggerInterface | None = None,
-    fs: FileSystemInterface | None = None,
-) -> Config:
-    logger = logger or default_logger
-    fs = fs or RealFileSystem()
+def load_config(config_path: Path, logger: LoggerInterface, fs: FileSystemInterface) -> Config:
     config_path = config_path.resolve()
     logger.info(f"Loading global configuration from {config_path}")
-    config_entry = load_yaml_file(config_path, fs, raise_on_error=True)
+    config_entry = load_yaml_file(config_path, fs, logger, raise_on_error=True)
     config = validate_config(config_entry, Config, logger, raise_on_error=True)
     config = cast(Config, config)
-    logger_manager.update_logger_level(config.general.logging.level)
+    logger.update_log_level(config.general.logging.level)
     logger.debug("Global configuration loaded and validated successfully.")
     log_general_config(config.general, logger)
     log_hooks_config(config.hooks, logger)
     return config
 
 
-def load_project_config(
-    config_path: Path,
-    logger: LoggerInterface | None = None,
-    fs: FileSystemInterface | None = None,
-) -> LocalConfig | None:
-    logger = logger or default_logger
-    fs = fs or RealFileSystem()
-
+def load_project_config(config_path: Path, logger: LoggerInterface, fs: FileSystemInterface) -> LocalConfig | None:
     if not fs.exists(str(config_path)):
         logger.info(f"Project specific configuration file {config_path} not found. Using default settings.")
         return None
 
     logger.info(f"Loading Project specific configuration from {config_path}")
-    config_entry = load_yaml_file(config_path, fs, raise_on_error=False)
+    config_entry = load_yaml_file(config_path, fs, logger, raise_on_error=False)
 
     if config_entry is None or config_entry == {}:
         logger.error(f"Project-specific configuration file {config_path} is empty or invalid. Using default settings.")

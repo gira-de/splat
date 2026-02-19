@@ -1,26 +1,17 @@
 from pathlib import Path
 
 from splat.config.model import PMConfig
-from splat.interface.logger import LoggerInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import AuditReport, DependencyType, Lockfile
+from splat.model import AuditReport, DependencyType, Lockfile, RuntimeContext
 from splat.package_managers.common.pip_audit_parser import parse_pip_audit_output
 from splat.package_managers.uv.command_runner import UvCommandRunner
 from splat.package_managers.uv.pyproject_manager import UvPyprojectManager
 from splat.package_managers.uv.repo_manager import UvRepoManager
-from splat.utils.command_runner.interface import CommandRunner
-from splat.utils.fs import FileSystemInterface
 
 
 class UvPackageManager(PackageManagerInterface):
-    def __init__(
-        self,
-        config: PMConfig,
-        command_runner: CommandRunner | None = None,
-        fs: FileSystemInterface | None = None,
-        logger: LoggerInterface | None = None,
-    ) -> None:
-        super().__init__(config, command_runner, fs, logger)
+    def __init__(self, config: PMConfig, ctx: RuntimeContext) -> None:
+        super().__init__(config, ctx)
         self.uv = UvCommandRunner(self.command_runner, self.logger)
         self.pyproject_manager = UvPyprojectManager(self.fs)
         self.repo_manager = UvRepoManager(self.env_manager, self.fs, self.logger)
@@ -50,7 +41,7 @@ class UvPackageManager(PackageManagerInterface):
     def audit(self, lockfile: Lockfile, re_audit: bool = False) -> list[AuditReport]:
         audit_ouput = self.run_audit_command(lockfile.path.parent, re_audit)
         direct_deps = self.pyproject_manager.get_direct_deps(str(lockfile.path.parent / self.manifest_file_name))
-        return parse_pip_audit_output(audit_ouput, direct_deps, lockfile)
+        return parse_pip_audit_output(audit_ouput, direct_deps, lockfile, self.logger)
 
     def update(self, vuln_report: AuditReport) -> list[str]:
         init_log_msg = f"""{vuln_report.dep.name} from {vuln_report.dep.version} to {vuln_report.fixed_version} in {

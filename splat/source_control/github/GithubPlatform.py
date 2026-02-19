@@ -15,8 +15,6 @@ from splat.source_control.github.errors import GithubPullRequestError
 from splat.source_control.github.model import GitHubConfig, GithubRepositoryEntry
 from splat.source_control.github.pr_handler import GithubPRHandler
 from splat.utils.env_manager.interface import EnvManager
-from splat.utils.env_manager.os import OsEnvManager
-from splat.utils.logger_config import default_logger
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -24,18 +22,18 @@ class GithubPlatform(GitPlatformInterface):
     def __init__(
         self,
         config: GitHubConfig,
-        logger: LoggerInterface | None = None,
-        env_manager: EnvManager | None = None,
+        logger: LoggerInterface,
+        env_manager: EnvManager,
         api: GitHubAPI | None = None,
     ) -> None:
         super().__init__(config)
-        self.logger = logger or default_logger
-        self.env_manager = env_manager or OsEnvManager(self.logger)
+        self.logger = logger
+        self.env_manager = env_manager
         self.domain = self.env_manager.resolve_value(config.domain)
         self._access_token = self.env_manager.resolve_value(config.access_token)
         self._name = config.name
         self.filters = config.filters
-        self.api = api or GitHubAPI(self.domain, self._access_token)
+        self.api = api or GitHubAPI(self.domain, self._access_token, self.logger)
         self.description_generator = DescriptionGenerator()
         self.pr_handler = GithubPRHandler(self.api, self.logger)
 
@@ -56,10 +54,12 @@ class GithubPlatform(GitPlatformInterface):
         return self._access_token
 
     @classmethod
-    def from_platform_config(cls, platform_config: PlatformConfig) -> GithubPlatform:
+    def from_platform_config(
+        cls, platform_config: PlatformConfig, logger: LoggerInterface, env_manager: EnvManager
+    ) -> GithubPlatform:
         config_dict = platform_config.model_dump()
         validated_config = GitHubConfig.model_validate(config_dict)
-        return cls(config=validated_config)
+        return cls(config=validated_config, logger=logger, env_manager=env_manager)
 
     def _validate_and_create_remote_project_model(self, project_data: dict[str, Any]) -> RemoteProject | None:
         try:

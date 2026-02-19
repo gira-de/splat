@@ -6,7 +6,6 @@ from pydantic import ValidationError
 from splat.config.model import FiltersConfig, GeneralConfig, HooksConfig
 from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, Lockfile, ProjectAuditFixResult
-from splat.utils.logger_config import ContextLoggerAdapter, default_logger, logger
 
 
 def generate_banner(text: str) -> str:
@@ -56,6 +55,7 @@ def log_found_lockfiles(
     manager_name: str,
     project_name: str,
     found_lockfiles: list[Lockfile],
+    logger: LoggerInterface,
 ) -> None:
     if len(found_lockfiles) == 0:
         logger.info(f"No {manager_name} lockfiles found in {project_name}. Skipping...")
@@ -67,6 +67,7 @@ def log_found_lockfiles(
 def log_found_audit_reports(
     found_lockfile: Lockfile,
     vulnerable_dependencies: list[AuditReport],
+    logger: LoggerInterface,
 ) -> None:
     if not vulnerable_dependencies:
         logger.info(f"No vulnerabilities found in {found_lockfile.relative_path}.")
@@ -84,7 +85,7 @@ def format_commit_summary(commit_messages: list[str]) -> str:
     return "Commit summary:\n    - " + "\n    - ".join([msg.split("\n")[0] for msg in commit_messages])
 
 
-def log_audit(logger: ContextLoggerAdapter, lockfile: Lockfile, re_audit: bool) -> None:
+def log_audit(logger: LoggerInterface, lockfile: Lockfile, re_audit: bool) -> None:
     action = "Reauditing" if re_audit else "Auditing"
     logger.info(f"{action} dependencies in lockfile '{lockfile.relative_path}' for security vulnerabilities...")
 
@@ -99,7 +100,9 @@ def format_remaining_vulns_summary(remaining_vulns: list[AuditReport]) -> str:
     )
 
 
-def log_audit_fix_results(project_name: str, branch_name: str, result: ProjectAuditFixResult) -> None:
+def log_audit_fix_results(
+    project_name: str, branch_name: str, result: ProjectAuditFixResult, logger: LoggerInterface
+) -> None:
     commit_summary = format_commit_summary(result.commit_messages)
     remaining_vulns_summary = format_remaining_vulns_summary(result.remaining_vulns)
 
@@ -142,9 +145,8 @@ def log_pydantic_validation_error(
     error: ValidationError,
     prefix_message: str,
     unparsable_data: str | dict[Any, Any] | None,
-    logger: LoggerInterface | None = None,
+    logger: LoggerInterface,
 ) -> None:
-    logger = logger or default_logger
     error_details = "; ".join(
         (f"Field '{' -> '.join(str(item) for item in e['loc'])}' - {e['msg']}" if e["loc"] else f"Error - {e['msg']}")
         for e in error.errors()

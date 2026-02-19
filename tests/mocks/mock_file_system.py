@@ -22,6 +22,12 @@ class MockFileSystem(FileSystemInterface):
         self.directories.add(path)
 
     def glob(self, path: str, pattern: str) -> list[str]:
+        if pattern.startswith("**/"):
+            suffix = pattern[3:]
+            base_prefix = f"{path}/"
+            if "/" in suffix:
+                return [file for file in self.files if file.startswith(base_prefix) and file.endswith(suffix)]
+            return [file for file in self.files if file.startswith(base_prefix) and Path(file).name == suffix]
         return [file for file in self.files if Path(file).match(f"{path}/{pattern}")]
 
     def exists(self, path: str) -> bool:

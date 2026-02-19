@@ -14,19 +14,18 @@ from splat.source_control.gitlab.mr_handler import MergeRequestHandler
 from splat.source_control.gitlab.projects_handler import GitlabProjectHandler
 from splat.utils.env_manager.interface import EnvManager
 from splat.utils.env_manager.os import OsEnvManager
-from splat.utils.logger_config import default_logger
 
 
 class GitlabPlatform(GitPlatformInterface):
     def __init__(
         self,
         config: GitLabConfig,
-        logger: LoggerInterface | None = None,
-        env_manager: EnvManager | None = None,
+        logger: LoggerInterface,
+        env_manager: EnvManager,
         api: GitLabAPI | None = None,
     ) -> None:
         super().__init__(config)
-        self.logger = logger or default_logger
+        self.logger = logger
         self.env_manager = env_manager or OsEnvManager(self.logger)
         self.domain = self.env_manager.resolve_value(config.domain)
         self._access_token = self.env_manager.resolve_value(config.access_token)
@@ -53,10 +52,12 @@ class GitlabPlatform(GitPlatformInterface):
         return self._access_token
 
     @classmethod
-    def from_platform_config(cls, platform_config: PlatformConfig) -> GitlabPlatform:
+    def from_platform_config(
+        cls, platform_config: PlatformConfig, logger: LoggerInterface, env_manager: EnvManager
+    ) -> GitlabPlatform:
         config_dict = platform_config.model_dump()
         validated_config = GitLabConfig.model_validate(config_dict)
-        return cls(config=validated_config)
+        return cls(config=validated_config, logger=logger, env_manager=env_manager)
 
     def fetch_projects(self, project_id: str | None = None, timeout: float = 60) -> List[RemoteProject]:
         if project_id:

@@ -3,10 +3,11 @@ from unittest.mock import MagicMock
 
 from splat.config.config_merger import _merge_package_managers_config
 from splat.config.model import LocalPackageManagersConfig, PMConfig, RepoConfig
+from splat.model import RuntimeContext
 from splat.package_managers.pipenv.PipenvPackageManager import PipenvPackageManager
 from splat.package_managers.poetry.PoetryPackageManager import PoetryPackageManager
 from splat.package_managers.yarn.YarnPackageManager import YarnPackageManager
-from tests.mocks import MockCommandRunner, MockFileSystem, MockLogger
+from tests.mocks import MockCommandRunner, MockEnvManager, MockFileSystem, MockLogger
 
 
 class TestMergePackageManagersConfig(unittest.TestCase):
@@ -15,17 +16,24 @@ class TestMergePackageManagersConfig(unittest.TestCase):
         mock_config = MagicMock(spec=PMConfig)
         self.mock_fs = MockFileSystem()
         self.mock_logger = MockLogger()
+        self.mock_env_manager = MockEnvManager()
+        self.mock_ctx = RuntimeContext(
+            logger=self.mock_logger,
+            fs=self.mock_fs,
+            command_runner=self.mock_runner,
+            env_manager=self.mock_env_manager,
+        )
         # Mock global package managers
-        self.pipenv = PipenvPackageManager(mock_config, self.mock_runner, self.mock_fs, self.mock_logger)
-        self.yarn = YarnPackageManager(mock_config, self.mock_runner, self.mock_fs)
-        self.poetry = PoetryPackageManager(mock_config, self.mock_runner, self.mock_fs, self.mock_logger)
+        self.pipenv = PipenvPackageManager(mock_config, self.mock_ctx)
+        self.yarn = YarnPackageManager(mock_config, self.mock_ctx)
+        self.poetry = PoetryPackageManager(mock_config, self.mock_ctx)
 
         self.global_package_managers = [self.pipenv, self.yarn]
 
     def test_merge_package_manager_config_enables_new_package_manager_in_local(self) -> None:
         local_pm_config = LocalPackageManagersConfig(poetry=PMConfig(enabled=True))
         final_package_managers = _merge_package_managers_config(
-            self.global_package_managers, local_pm_config, self.mock_logger
+            self.global_package_managers, local_pm_config, self.mock_ctx
         )
         self.assertEqual(len(final_package_managers), 3)
         self.assertIn(self.pipenv, final_package_managers)
@@ -38,7 +46,7 @@ class TestMergePackageManagersConfig(unittest.TestCase):
     def test_merge_package_manager_config_disables_existing_package_manager_in_local(self) -> None:
         local_pm_config = LocalPackageManagersConfig(yarn=PMConfig(enabled=False))
         final_package_managers = _merge_package_managers_config(
-            self.global_package_managers, local_pm_config, self.mock_logger
+            self.global_package_managers, local_pm_config, self.mock_ctx
         )
         self.assertEqual(len(final_package_managers), 1)
         self.assertIn(self.pipenv, final_package_managers)
@@ -47,7 +55,7 @@ class TestMergePackageManagersConfig(unittest.TestCase):
     def test_merge_package_manager_config_no_change_to_package_managers(self) -> None:
         local_pm_config = LocalPackageManagersConfig()
         final_package_managers = _merge_package_managers_config(
-            self.global_package_managers, local_pm_config, self.mock_logger
+            self.global_package_managers, local_pm_config, self.mock_ctx
         )
         self.assertEqual(len(final_package_managers), 2)
         self.assertIn(self.pipenv, final_package_managers)
@@ -56,7 +64,7 @@ class TestMergePackageManagersConfig(unittest.TestCase):
     def test_merge_package_manager_config_enables_and_disables_package_managers(self) -> None:
         local_pm_config = LocalPackageManagersConfig(poetry=PMConfig(enabled=True), yarn=PMConfig(enabled=False))
         final_package_managers = _merge_package_managers_config(
-            self.global_package_managers, local_pm_config, self.mock_logger
+            self.global_package_managers, local_pm_config, self.mock_ctx
         )
         self.assertEqual(len(final_package_managers), 2)
         self.assertIn(self.pipenv, final_package_managers)
@@ -67,7 +75,7 @@ class TestMergePackageManagersConfig(unittest.TestCase):
         )
 
     def test_merge_package_manager_config_local_config_is_none(self) -> None:
-        final_package_managers = _merge_package_managers_config(self.global_package_managers, None, self.mock_logger)
+        final_package_managers = _merge_package_managers_config(self.global_package_managers, None, self.mock_ctx)
         self.assertEqual(len(final_package_managers), 2)
         self.assertIn(self.pipenv, final_package_managers)
         self.assertIn(self.yarn, final_package_managers)
@@ -76,10 +84,10 @@ class TestMergePackageManagersConfig(unittest.TestCase):
     def test_merge_repositories_for_existing_pm(self) -> None:
         # global PMConfig for pipenv with a repository.
         global_repo_config = PMConfig(enabled=True, repositories={"repo1": RepoConfig(url="https://global-repo1.com")})
-        pipenv_pm = PipenvPackageManager(global_repo_config, self.mock_runner, self.mock_fs, self.mock_logger)
+        pipenv_pm = PipenvPackageManager(global_repo_config, self.mock_ctx)
         # no repos for yarn
         global_yarn_config = PMConfig(enabled=True, repositories={})
-        yarn_pm = YarnPackageManager(global_yarn_config, self.mock_runner, self.mock_fs, self.mock_logger)
+        yarn_pm = YarnPackageManager(global_yarn_config, self.mock_ctx)
         global_pms = [pipenv_pm, yarn_pm]
 
         # Local config for pipenv: override repo1 and add repo2.
@@ -93,7 +101,7 @@ class TestMergePackageManagersConfig(unittest.TestCase):
             )
         )
 
-        final_package_managers = _merge_package_managers_config(global_pms, local_pm_config, self.mock_logger)
+        final_package_managers = _merge_package_managers_config(global_pms, local_pm_config, self.mock_ctx)
         merged_pm_dict = {pm.name.lower(): pm for pm in final_package_managers}
         self.assertIn("pipenv", merged_pm_dict)
         merged_pipenv = merged_pm_dict["pipenv"]
@@ -107,8 +115,8 @@ class TestMergePackageManagersConfig(unittest.TestCase):
     def test_merge_repositories_for_new_pm(self) -> None:
         # Global config does not include poetry.
         global_pm_config = PMConfig(enabled=True, repositories={})
-        pipenv_pm = PipenvPackageManager(global_pm_config, self.mock_runner, self.mock_fs, self.mock_logger)
-        yarn_pm = YarnPackageManager(global_pm_config, self.mock_runner, self.mock_fs)
+        pipenv_pm = PipenvPackageManager(global_pm_config, self.mock_ctx)
+        yarn_pm = YarnPackageManager(global_pm_config, self.mock_ctx)
         global_pms = [pipenv_pm, yarn_pm]
 
         # Local config enabling poetry with repository settings.
@@ -116,7 +124,7 @@ class TestMergePackageManagersConfig(unittest.TestCase):
             poetry=PMConfig(enabled=True, repositories={"repo3": RepoConfig(url="https://local-repo3.com")})
         )
 
-        final_package_managers = _merge_package_managers_config(global_pms, local_pm_config, self.mock_logger)
+        final_package_managers = _merge_package_managers_config(global_pms, local_pm_config, self.mock_ctx)
         merged_pm_dict = {pm.name.lower(): pm for pm in final_package_managers}
         self.assertIn("poetry", merged_pm_dict)
         merged_poetry = merged_pm_dict["poetry"]

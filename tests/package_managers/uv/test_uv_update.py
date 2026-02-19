@@ -8,7 +8,7 @@ from tests.package_managers.base_test import BasePackageManagerTest
 class TestUvUpdate(BasePackageManagerTest):
     def setUp(self) -> None:
         super().setUp()
-        self.uv_manager = UvPackageManager(self.mock_config, self.mock_command_runner, self.mock_fs, self.mock_logger)
+        self.uv_manager = UvPackageManager(self.mock_config, self.mock_ctx)
 
     def test_update_direct_dependency(self) -> None:
         vuln_report = self.audit_report

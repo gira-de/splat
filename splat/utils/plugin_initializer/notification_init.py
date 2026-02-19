@@ -4,7 +4,7 @@ from typing import cast
 from splat.config.model import NotificationSinksConfig
 from splat.interface.logger import LoggerInterface
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
-from splat.utils.logger_config import default_logger
+from splat.utils.env_manager.interface import EnvManager
 from splat.utils.plugin_initializer.dynamic_import import get_class
 
 NOTIFICATIONS_MODULE_PATH = "splat.notifications"
@@ -21,12 +21,13 @@ def get_notification_sink_class(sink_type: str) -> type[NotificationSinksInterfa
 
 
 def initialize_notification_sinks(
-    notification_sinks_configs: NotificationSinksConfig, logger: LoggerInterface | None = None
+    notification_sinks_configs: NotificationSinksConfig,
+    logger: LoggerInterface,
+    env_manager: EnvManager,
 ) -> list[NotificationSinksInterface]:
     """
     Initializes and returns a list of notification sink instances based on the provided configuration.
     """
-    logger = logger or default_logger
     initiated_notification_sinks: list[NotificationSinksInterface] = []
     formatted_names: list[str] = []
     sink_counts: defaultdict[str, int] = defaultdict(int)
@@ -35,7 +36,7 @@ def initialize_notification_sinks(
         formatted_name = f"'{sink_config.type}': '{sink_config.name}'"
         try:
             sink_class = get_notification_sink_class(sink_config.type)
-            sink_instance = sink_class.from_sink_config(sink_config)
+            sink_instance = sink_class.from_sink_config(sink_config, logger=logger, env_manager=env_manager)
             initiated_notification_sinks.append(sink_instance)
             formatted_names.append(formatted_name)
             sink_counts[sink_config.type] += 1

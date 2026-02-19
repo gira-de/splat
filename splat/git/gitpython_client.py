@@ -9,22 +9,28 @@ from splat.config.model import GitConfig
 from splat.git.interface import DEFAULT_GIT_AUTHOR_EMAIL, DEFAULT_GIT_AUTHOR_NAME, GitClientInterface, GitCommitAuthor
 from splat.interface.logger import LoggerInterface
 from splat.utils.errors import GitOperationError
-from splat.utils.logger_config import default_logger
 
 
 class GitPythonClient(GitClientInterface):
-    def __init__(self, repo_path: str, logger: LoggerInterface = default_logger) -> None:
+    def __init__(self, repo_path: str, logger: LoggerInterface) -> None:
         self._repo = Repo(repo_path, search_parent_directories=True)
         self.logger = logger
 
     @classmethod
-    def clone(cls, url: str, to_path: Path, depth: int | None = None, no_single_branch: bool = True) -> GitPythonClient:
+    def clone(
+        cls,
+        url: str,
+        to_path: Path,
+        logger: LoggerInterface,
+        depth: int | None = None,
+        no_single_branch: bool = True,
+    ) -> GitPythonClient:
         """Clone a repository and return a GitPythonClient for it."""
         try:
-            default_logger.debug(f"Cloning repository into {to_path}")
+            logger.debug(f"Cloning repository into {to_path}")
             Repo.clone_from(url=url, to_path=to_path, depth=depth, no_single_branch=no_single_branch)
-            default_logger.info(f"Successfully cloned repository into {to_path}")
-            return cls(str(to_path))
+            logger.info(f"Successfully cloned repository into {to_path}")
+            return cls(str(to_path), logger)
         except GitCommandError as e:
             raise GitOperationError(f"Failed to clone repository into {to_path}", e)
 

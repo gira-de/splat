@@ -16,6 +16,7 @@ from tests.mocks import MockLogger
 
 class TestYarnParseYarnAuditOutput(unittest.TestCase):
     def setUp(self) -> None:
+        self.logger = MockLogger()
         self.lockfile = Lockfile(
             path=Path("/path/to/project/example.lock"),
             relative_path=Path("/example.lock"),
@@ -48,7 +49,7 @@ class TestYarnParseYarnAuditOutput(unittest.TestCase):
             ),
         ]
 
-        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile)
+        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile, self.logger)
         self.assertEqual(vulnerabilities, expected_vulnerability_report)
 
     def test_yarn_parse_yarn_audit_output_with_transitive_type_deps(self) -> None:
@@ -77,7 +78,7 @@ class TestYarnParseYarnAuditOutput(unittest.TestCase):
             ),
         ]
 
-        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile)
+        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile, self.logger)
         self.assertEqual(vulnerabilities, expected_vulnerability_report)
 
     def test_yarn_parse_yarn_audit_output_with_both_type_deps(self) -> None:
@@ -106,7 +107,7 @@ class TestYarnParseYarnAuditOutput(unittest.TestCase):
             ),
         ]
 
-        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile)
+        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile, self.logger)
         self.assertEqual(vulnerabilities, expected_vulnerability_report)
 
     def test_parse_yarn_audit_output_returns_empty_list_on_no_vulns(self) -> None:
@@ -134,17 +135,16 @@ class TestYarnParseYarnAuditOutput(unittest.TestCase):
             ]
         )
 
-        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile)
+        vulnerabilities = parse_yarn_audit_output(mock_audit_output, self.lockfile, self.logger)
         self.assertEqual(vulnerabilities, [])
 
     def test_yarn_parse_yarn_audit_output_handles_validation_error(self) -> None:
         mock_audit_output = "{invalid json} \n {invalid json}"
-        mock_logger = MockLogger()
 
         with self.assertRaises(RuntimeError):
-            result = parse_yarn_audit_output(mock_audit_output, self.lockfile, mock_logger)
+            result = parse_yarn_audit_output(mock_audit_output, self.lockfile, self.logger)
             self.assertEqual(result, [])
-        self.assertTrue(mock_logger.has_logged("ERROR: Yarn Audit output Validation Failed at line {invalid json}"))
+        self.assertTrue(self.logger.has_logged("ERROR: Yarn Audit output Validation Failed at line {invalid json}"))
 
 
 if __name__ == "__main__":

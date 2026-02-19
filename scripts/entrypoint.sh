@@ -25,7 +25,7 @@ if [ "$HOST_UID" != "$SPLAT_UID" ]; then
 
   export NSS_WRAPPER_PASSWD="$PASSWD"
   export NSS_WRAPPER_GROUP="$GROUP"
-  export LD_PRELOAD="libnss_wrapper.so"
+  export LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libnss_wrapper.so"
 fi
 
 exec "$@"
