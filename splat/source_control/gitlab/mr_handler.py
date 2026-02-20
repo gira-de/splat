@@ -93,6 +93,7 @@ class MergeRequestHandler:
             project_url=project.web_url,
             project_name=project.name_with_namespace,
             operation="Merge Request updated on GitLab",
+            number=gitlab_mr.iid,
         )
 
     def create_new_merge_request(
@@ -142,4 +143,6 @@ class MergeRequestHandler:
             project_url=project.web_url,
             project_name=project.name_with_namespace,
             operation="Merge Request Created on GitLab",
+            number=gitlab_new_mr.iid,
         )
+

@@ -116,3 +116,4 @@ class MergeRequest(NamedTuple):
     project_url: str
     project_name: str
     operation: str
+    number: int

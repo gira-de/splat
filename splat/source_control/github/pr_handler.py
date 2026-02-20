@@ -69,6 +69,7 @@ class GithubPRHandler:
             project_url=updated_pr.head.repo.html_url,
             project_name=project.name_with_namespace,
             operation="Pull Request Updated on Github",
+            number=updated_pr.number,
         )
 
     def create_new_pr(
@@ -95,4 +96,5 @@ class GithubPRHandler:
             project_url=pr.head.repo.html_url,
             project_name=project.name_with_namespace,
             operation="Pull Request Created on Github",
+            number=pr.number,
         )

@@ -26,6 +26,7 @@ class GithubPullRequestEntry(BaseModel, extra="allow"):
     url: str
     html_url: str
     head: HeadGithubPullRequestEntry
+    number: int
 
 
 class GitHubConfig(PlatformConfig):
