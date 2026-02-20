@@ -16,6 +16,7 @@ Splat currently focuses on automating the dependency update process. It is desig
 - **Direct and Transitive Updates**: Can update both direct and transitive (aka indirect) dependencies. If the package manager supports it, it fixes security issues in transitive dependencies without updating the direct dependency.
 - **Re-Scans for Remaining Vulnerabilities**: After updating all relevant dependencies, Splat performs a re-audit to check for any remaining vulnerabilities. These remaining issues, if any, are documented in the merge request. If the re-audit identifies unresolved vulnerabilities, the merge request is automatically created as a draft to prevent unintentional merges.
 - **Merge/Pull Requests**: Pushes changes and creates a merge/pull request with a descriptive overview of the updates made and any issues encountered.
+- **Maintainer Auto-Assignment**: Configures the assignee for Splat-created MR/PRs via repository topics (see [CONFIGURATION.md](CONFIGURATION.md#maintainer-auto-assignment-via-repository-topics)).
 - **Notifications**: Sends clear and easily readable notifications for:
   - Merge request creations, updates: Splat notifies you when a merge request is created, updated, providing details about the changes and any issues encountered.
   - Dependency update process failures: If the dependency update process fails, Splat will notify you with detailed information to help you understand and resolve the problem.
