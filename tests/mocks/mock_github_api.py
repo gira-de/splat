@@ -19,6 +19,8 @@ class MockGitHubAPI(GitHubAPI):
         self._post_request_error: Exception | None = None
         self._patch_request_error: Exception | None = None
         self._get_request_index = 0
+        self.post_calls: list[tuple[str, JSON]] = []
+        self.patch_calls: list[tuple[str, JSON]] = []
 
     def get_json(self, endpoint: str, params: dict[str, str] | None = None) -> JSON:
         if self._get_request_error:
@@ -32,6 +34,7 @@ class MockGitHubAPI(GitHubAPI):
         return self._get_request_response if self._get_request_response is not None else []
 
     def post_json(self, endpoint: str, data: JSON) -> JSON:
+        self.post_calls.append((endpoint, data))
         if self._post_request_error:
             raise self._post_request_error
         if self._post_request_response is None:
@@ -39,6 +42,7 @@ class MockGitHubAPI(GitHubAPI):
         return self._post_request_response
 
     def patch_request(self, endpoint: str, data: JSON) -> JSON:
+        self.patch_calls.append((endpoint, data))
         if self._patch_request_error:
             raise self._patch_request_error
         if self._patch_request_response is None:

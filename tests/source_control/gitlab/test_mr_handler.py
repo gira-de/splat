@@ -1,5 +1,7 @@
 import unittest
 
+from requests import HTTPError, Response
+
 from splat.interface.APIClient import JSON
 from splat.model import MergeRequest
 from splat.source_control.gitlab.errors import MergeRequestValidationError
@@ -81,6 +83,7 @@ class TestGitlabMRHandler(BaseGitlabSourceControlTest):
         result = handler.update_existing_merge_request(
             self.project, open_mr, mr_title, self.commit_messages, self.remaining_vulns
         )
+        self.assertNotIn("assignee_id", fake_api.put_calls[0][1])
         expected_mr = MergeRequest(
             title=mr_title,
             url="http://gitlab.com/merge_requests/202",
@@ -102,6 +105,7 @@ class TestGitlabMRHandler(BaseGitlabSourceControlTest):
         result = handler.create_new_merge_request(
             self.project, mr_title, self.commit_messages, self.remaining_vulns, self.branch_name
         )
+        self.assertNotIn("assignee_id", fake_api.post_calls[0][1])
         expected_mr = MergeRequest(
             title=mr_title,
             url="http://gitlab.com/merge_requests/101",
@@ -116,6 +120,52 @@ class TestGitlabMRHandler(BaseGitlabSourceControlTest):
     def test_create_new_merge_request_failure_in_post(self) -> None:
         pass
 
+    def test_get_user_id_by_username_returns_none_when_user_not_found(self) -> None:
+        fake_api = MockGitLabAPI(self.base_url, get_json_by_endpoint={"/users": []})
+        handler = MergeRequestHandler(fake_api, self.fake_logger)
 
-if __name__ == "__main__":
-    unittest.main()
+        user_id = handler._get_user_id_by_username("missing-user")
+
+        self.assertIsNone(user_id)
+        self.assertTrue(self.fake_logger.has_logged("was not found"))
+
+    def test_get_user_id_by_username_queries_gitlab_using_username_param(self) -> None:
+        fake_api = MockGitLabAPI(self.base_url, get_json_by_endpoint={"/users": [{"id": 42}]})
+        handler = MergeRequestHandler(fake_api, self.fake_logger)
+
+        user_id = handler._get_user_id_by_username("MaintainerUser")
+
+        self.assertEqual(user_id, 42)
+        self.assertEqual(fake_api.get_calls[0][0], "/users")
+        self.assertEqual(fake_api.get_calls[0][1], {"username": "MaintainerUser"})
+
+    def test_assign_user_to_mr_uses_project_id_endpoint(self) -> None:
+        fake_api = MockGitLabAPI(
+            self.base_url,
+            get_json_by_endpoint={"/users": [{"id": 42}]},
+            put_json_response={"ok": True},
+        )
+        handler = MergeRequestHandler(fake_api, self.fake_logger)
+
+        handler.assign_user_to_mr("maintainer-user", self.project, mr_number=101)
+
+        self.assertEqual(fake_api.put_calls[0][0], "/projects/1/merge_requests/101")
+        self.assertEqual(fake_api.put_calls[0][1], {"assignee_id": 42})
+
+    def test_assign_user_to_mr_logs_warning_on_assignment_http_error(self) -> None:
+        response = Response()
+        response.status_code = 403
+        response._content = b"Forbidden"
+        fake_api = MockGitLabAPI(
+            self.base_url,
+            get_json_by_endpoint={"/users": [{"id": 42}]},
+            put_json_error=HTTPError(response=response),
+        )
+        handler = MergeRequestHandler(fake_api, self.fake_logger)
+
+        handler.assign_user_to_mr("maintainer-user", self.project, mr_number=101)
+
+        self.assertEqual(len(fake_api.put_calls), 1)
+        self.assertTrue(
+            self.fake_logger.has_logged("WARNING: Failed to assign user 'maintainer-user' to MR #101 for group/project")
+        )

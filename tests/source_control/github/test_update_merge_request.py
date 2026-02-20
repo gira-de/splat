@@ -110,6 +110,30 @@ class TestUpdateMergeRequest(BaseGithubSourceControlTest):
             self.mock_logger.has_logged("Pull request updated successfully for group/repo: http://github.com/pull/1")
         )
 
+    def test_github_update_merge_request_does_not_create_new_pr_when_existing_match_found(self) -> None:
+        self.mock_api._get_request_responses = [
+            [
+                {
+                    "number": 1,
+                    "title": self.existing_pr.title,
+                    "body": self.existing_pr.body,
+                    "url": self.existing_pr.url,
+                    "html_url": self.existing_pr.html_url,
+                    "head": {"ref": self.branch_name, "repo": {"html_url": "http://github.com/repo"}},
+                },
+                {"names": []},
+            ],
+        ]
+        self.setup_mock_requests_patch()
+
+        result = self.github_platform.create_or_update_merge_request(
+            self.project, self.new_commit_messages, self.branch_name, []
+        )
+
+        self.assertEqual(result, self.updated_pr)
+        self.assertEqual(len(self.mock_api.post_calls), 0)
+        self.assertEqual(len(self.mock_api.patch_calls), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

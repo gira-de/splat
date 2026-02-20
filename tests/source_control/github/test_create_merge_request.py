@@ -1,3 +1,5 @@
+from requests import HTTPError, Response
+
 from splat.model import MergeRequest
 from tests.source_control.github.base_test import BaseGithubSourceControlTest
 
@@ -77,4 +79,24 @@ class TestCreateMergeRequest(BaseGithubSourceControlTest):
             self.mock_logger.has_logged(
                 f"Failed to create or update pull request for {self.project.name_with_namespace}"
             )
+        )
+
+    def test_github_create_merge_request_with_unassignable_owner_logs_warning(self) -> None:
+        self.mock_api._get_request_responses = [
+            [],
+            {"names": ["splat-maintainer:maintainer-user"]},
+        ]
+        self.setup_mock_requests_post()
+        response = Response()
+        response.status_code = 422
+        response._content = b"Validation Failed"
+        self.mock_api._patch_request_error = HTTPError(response=response)
+
+        result = self.github_platform.create_or_update_merge_request(
+            self.project, self.commit_messages, self.branch_name, []
+        )
+
+        self.assertEqual(result, self.created_pr)
+        self.assertTrue(
+            self.mock_logger.has_logged("WARNING: Failed to assign user 'maintainer-user' to PR #1 for group/repo")
         )
