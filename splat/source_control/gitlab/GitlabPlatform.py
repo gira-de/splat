@@ -2,31 +2,26 @@ from __future__ import annotations
 
 from typing import List
 
-import requests
-
 from splat.config.model import PlatformConfig
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
+from splat.source_control.common.maintainer_finder import find_project_maintainer
 from splat.source_control.gitlab.api import GitLabAPI
+from splat.source_control.gitlab.errors import MergeRequestHandlerError
 from splat.source_control.gitlab.model import GitLabConfig
 from splat.source_control.gitlab.mr_handler import MergeRequestHandler
 from splat.source_control.gitlab.projects_handler import GitlabProjectHandler
 from splat.utils.env_manager.interface import EnvManager
-from splat.utils.env_manager.os import OsEnvManager
 
 
 class GitlabPlatform(GitPlatformInterface):
     def __init__(
-        self,
-        config: GitLabConfig,
-        logger: LoggerInterface,
-        env_manager: EnvManager,
-        api: GitLabAPI | None = None,
+        self, config: GitLabConfig, logger: LoggerInterface, env_manager: EnvManager, api: GitLabAPI | None = None
     ) -> None:
-        super().__init__(config)
+        self._config = config
         self.logger = logger
-        self.env_manager = env_manager or OsEnvManager(self.logger)
+        self.env_manager = env_manager
         self.domain = self.env_manager.resolve_value(config.domain)
         self._access_token = self.env_manager.resolve_value(config.access_token)
         self._name = config.name
@@ -36,8 +31,16 @@ class GitlabPlatform(GitPlatformInterface):
         self.mr_handler = MergeRequestHandler(self.api, self.logger)
 
     @property
+    def config(self) -> GitLabConfig:
+        return self._config
+
+    @property
     def type(self) -> str:
         return "gitlab"
+
+    @property
+    def id(self) -> str | None:
+        return self._config.id
 
     @property
     def name(self) -> str:
@@ -82,18 +85,25 @@ class GitlabPlatform(GitPlatformInterface):
         title: str = "Splat Dependency Updates",
     ) -> MergeRequest:
         mr_title = self.mr_handler.build_merge_request_title(remaining_vulns, title)
+        project_topics = self.get_project_topics(project)
+        maintainer = find_project_maintainer(project.name_with_namespace, project_topics, self.logger)
         try:
             open_mr = self.mr_handler.get_open_merge_request(project, branch_name)
             if open_mr:
-                return self.mr_handler.update_existing_merge_request(
+                mr = self.mr_handler.update_existing_merge_request(
                     project, open_mr, mr_title, commit_messages, remaining_vulns
                 )
             else:
-                return self.mr_handler.create_new_merge_request(
+                mr = self.mr_handler.create_new_merge_request(
                     project, mr_title, commit_messages, remaining_vulns, branch_name
                 )
-        except requests.HTTPError as e:
-            action = "update" if "update_endpoint" in locals() else "create"
-            error_msg = f"Failed to {action} merge request for {project.name_with_namespace}: {e}"
+            if maintainer:
+                self.mr_handler.assign_user_to_mr(maintainer, project, mr.number)
+            return mr
+        except MergeRequestHandlerError as e:
+            error_msg = f"Failed to create or update merge request for {project.name_with_namespace}: {e}"
             self.logger.error(error_msg)
-            raise e
+            raise
+
+    def get_project_topics(self, project: RemoteProject) -> list[str]:
+        return self.project_handler.fetch_project_topics(project, timeout=10.0)

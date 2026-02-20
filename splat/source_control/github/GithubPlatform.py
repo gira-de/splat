@@ -10,9 +10,10 @@ from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
 from splat.source_control.common.description_generator import DescriptionGenerator
+from splat.source_control.common.maintainer_finder import find_project_maintainer
 from splat.source_control.github.api import GitHubAPI
 from splat.source_control.github.errors import GithubPullRequestError
-from splat.source_control.github.model import GitHubConfig, GithubRepositoryEntry
+from splat.source_control.github.model import GitHubConfig, GithubRepositoryEntry, GithubRepositoryTopicsEntry
 from splat.source_control.github.pr_handler import GithubPRHandler
 from splat.utils.env_manager.interface import EnvManager
 from splat.utils.logging_utils import log_pydantic_validation_error
@@ -26,7 +27,7 @@ class GithubPlatform(GitPlatformInterface):
         env_manager: EnvManager,
         api: GitHubAPI | None = None,
     ) -> None:
-        super().__init__(config)
+        self._config = config
         self.logger = logger
         self.env_manager = env_manager
         self.domain = self.env_manager.resolve_value(config.domain)
@@ -38,8 +39,16 @@ class GithubPlatform(GitPlatformInterface):
         self.pr_handler = GithubPRHandler(self.api, self.logger)
 
     @property
+    def config(self) -> GitHubConfig:
+        return self._config
+
+    @property
     def type(self) -> str:
         return "github"
+
+    @property
+    def id(self) -> str | None:
+        return self._config.id
 
     @property
     def name(self) -> str:
@@ -148,9 +157,16 @@ class GithubPlatform(GitPlatformInterface):
 
             matching_pr = self.pr_handler.find_open_pr(project, branch_name, timeout)
             if matching_pr:
-                return self.pr_handler.update_existing_pr(matching_pr, new_pr_description, project, draft, timeout)
-            return self.pr_handler.create_new_pr(title, new_pr_description, branch_name, project, draft, timeout)
+                pr = self.pr_handler.update_existing_pr(matching_pr, new_pr_description, project, draft, timeout)
+            else:
+                pr = self.pr_handler.create_new_pr(title, new_pr_description, branch_name, project, draft, timeout)
 
+            project_topics = self.get_project_topics(project)
+            maintainer = find_project_maintainer(project.name_with_namespace, project_topics, self.logger)
+            if maintainer:
+                self.pr_handler.assign_user_to_pr(maintainer, project, pr.number)
+
+            return pr
         except ValidationError as e:
             log_pydantic_validation_error(
                 error=e,
@@ -165,3 +181,22 @@ class GithubPlatform(GitPlatformInterface):
         except Exception as e:
             self.logger.error(f"Failed to create or update pull request for {project.name_with_namespace}: {e}")
             raise e
+
+    def get_project_topics(self, project: RemoteProject) -> list[str]:
+        endpoint = f"/repos/{project.name_with_namespace}/topics"
+        try:
+            data = self.api.get_json(endpoint)
+        except Exception as e:
+            self.logger.warning(f"Failed to fetch topics for {project.name_with_namespace}: {e}")
+            return []
+        try:
+            topics_response = GithubRepositoryTopicsEntry.model_validate(data)
+        except ValidationError as e:
+            log_pydantic_validation_error(
+                error=e,
+                prefix_message=f"Validation failed while fetching topics for {project.name_with_namespace}",
+                unparsable_data=cast(dict[str, JSON], data) if isinstance(data, dict) else None,
+                logger=self.logger,
+            )
+            return []
+        return [topic.strip() for topic in topics_response.names]

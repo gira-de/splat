@@ -29,6 +29,10 @@ class GithubPullRequestEntry(BaseModel, extra="allow"):
     number: int
 
 
+class GithubRepositoryTopicsEntry(BaseModel, extra="allow"):
+    names: list[str]
+
+
 class GitHubConfig(PlatformConfig):
     domain: str
     access_token: str

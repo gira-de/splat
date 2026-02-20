@@ -9,8 +9,10 @@ from splat.utils.env_manager.interface import EnvManager
 
 
 class GitPlatformInterface(ABC):
-    def __init__(self, config: PlatformConfig) -> None:
-        self.config = config
+    @property
+    @abstractmethod
+    def config(self) -> PlatformConfig:
+        pass
 
     @property
     @abstractmethod
@@ -19,8 +21,9 @@ class GitPlatformInterface(ABC):
         pass
 
     @property
+    @abstractmethod
     def id(self) -> str | None:
-        return self.config.id
+        pass
 
     @property
     @abstractmethod
@@ -64,4 +67,8 @@ class GitPlatformInterface(ABC):
         remaining_vulns: list[AuditReport],
         title: str = "Splat Dependency Updates",
     ) -> MergeRequest:
+        pass
+
+    @abstractmethod
+    def get_project_topics(self, project: RemoteProject) -> list[str]:
         pass

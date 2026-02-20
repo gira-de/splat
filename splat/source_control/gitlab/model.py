@@ -26,6 +26,14 @@ class GitLabMergeRequestEntry(BaseModel, extra="allow"):
     web_url: str
 
 
+class GitLabProjectTopicsEntry(BaseModel, extra="allow"):
+    topics: list[str]
+
+
+class GitLabUserEntry(BaseModel, extra="allow"):
+    id: int
+
+
 class GitLabDownstreamPipeline(BaseModel, extra="allow"):
     id: str | int
 

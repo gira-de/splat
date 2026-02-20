@@ -98,3 +98,19 @@ class GithubPRHandler:
             operation="Pull Request Created on Github",
             number=pr.number,
         )
+
+    def assign_user_to_pr(self, maintainer: str, project: RemoteProject, pr_number: int) -> None:
+        """
+        Assign maintainer to an existing pull request.
+        """
+        endpoint = f"/repos/{project.name_with_namespace}/issues/{pr_number}"  # treat like issues and not pulls
+        payload: JSON = {"assignees": [maintainer]}
+        self.logger.debug(f"Assigning user '{maintainer}' to PR #{pr_number} for {project.name_with_namespace}")
+        try:
+            self.api.patch_request(endpoint, payload)
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to assign user '{maintainer}' to PR #{pr_number} " f"for {project.name_with_namespace}: {e}"
+            )
+            return
+        self.logger.info(f"Assigned user '{maintainer}' to PR #{pr_number} for {project.name_with_namespace}")
