@@ -168,7 +168,8 @@ class TestProcessProjectIntegration(unittest.TestCase):
         self.assertEqual(len(mock_notification_sink.merge_request_notifications), 1)
         merge_request, commit_messages, remaining_vulns = mock_notification_sink.merge_request_notifications[0]
         self.assertEqual(
-            merge_request, MergeRequest("Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock")
+            merge_request,
+            MergeRequest("Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock", 1),
         )
         self.assertEqual(commit_messages, [commit_message])
         self.assertEqual(remaining_vulns, expected_remaining_vulns)

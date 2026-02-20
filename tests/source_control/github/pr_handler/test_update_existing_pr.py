@@ -16,6 +16,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         self.setup_mock_requests_patch()
 
         matching_pr = GithubPullRequestEntry(
+            number=1,
             title="Splat Dependency Updates",
             body="Some body",
             url="http://api.github.com/pulls/1",
@@ -34,6 +35,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         self.assertEqual(result.project_url, "http://github.com/repo")
         self.assertEqual(result.project_name, self.project.name_with_namespace)
         self.assertEqual(result.operation, "Pull Request Updated on Github")
+        self.assertEqual(result.number, 1)
         self.assertTrue(
             self.mock_logger.has_logged(
                 [
@@ -50,6 +52,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         self.mock_api._patch_request_error = HTTPError(response=response)
 
         matching_pr = GithubPullRequestEntry(
+            number=1,
             title="Splat Dependency Updates",
             body="Some body",
             url="http://api.github.com/pulls/1",

@@ -27,6 +27,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         self.assertEqual(result.project_url, "http://github.com/repo")
         self.assertEqual(result.project_name, self.project.name_with_namespace)
         self.assertEqual(result.operation, "Pull Request Created on Github")
+        self.assertEqual(result.number, 1)
 
         # Verify that the logger was called with the correct messages
         self.assertTrue(

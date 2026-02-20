@@ -87,6 +87,7 @@ class TestGitlabMRHandler(BaseGitlabSourceControlTest):
             project_url=self.project.web_url,
             project_name=self.project.name_with_namespace,
             operation="Merge Request updated on GitLab",
+            number=202,
         )
         self.assertEqual(result, expected_mr)
 
@@ -107,6 +108,7 @@ class TestGitlabMRHandler(BaseGitlabSourceControlTest):
             project_url=self.project.web_url,
             project_name=self.project.name_with_namespace,
             operation="Merge Request Created on GitLab",
+            number=101,
         )
         self.assertEqual(result, expected_mr)
 

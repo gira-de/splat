@@ -11,6 +11,7 @@ class TestCreateMergeRequest(BaseGithubSourceControlTest):
             project_url="http://github.com/repo",
             project_name="group/repo",
             operation="Pull Request Created on Github",
+            number=1,
         )
 
     def test_github_create_merge_request_with_commit_messages_and_no_remaining_vulns(self) -> None:
