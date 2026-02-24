@@ -6,6 +6,8 @@ general:
   git:
     clone_dir: "/splat/splat_repos/"
     branch_name: "splat"
+    author_name: "splat-bot"
+    author_email: "splatuser-bot@myorg.com"
   debug:
     skip_cleanup: False
 

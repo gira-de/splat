@@ -5,6 +5,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from splat.config.model import Config, PlatformConfig
+from splat.git.interface import GitCommitAuthor
 from splat.model import (
     AuditReport,
     Dependency,
@@ -15,6 +16,7 @@ from splat.model import (
     RemoteProject,
     RuntimeContext,
     Severity,
+    StatusReport,
     VulnerabilityDetail,
 )
 from splat.package_managers.yarn.YarnPackageManager import YarnPackageManager
@@ -157,6 +159,7 @@ class TestProcessProjectIntegration(unittest.TestCase):
 
         # Assert push changes
         self.assertEqual(git_client.push_calls, [branch_name])
+        self.assertEqual(git_client.push_calls_with_force, [(branch_name, True)])
 
         self.assertEqual(len(git_client.discard_calls), 1)
         self.assertIsNone(git_client.discard_calls[0])
@@ -169,3 +172,125 @@ class TestProcessProjectIntegration(unittest.TestCase):
         )
         self.assertEqual(commit_messages, [commit_message])
         self.assertEqual(remaining_vulns, expected_remaining_vulns)
+
+    def test_process_project_aborts_on_manual_changes_on_branch(
+        self,
+    ) -> None:
+        global_config = Config()
+        global_config.general.debug.skip_cleanup = True
+        notification_sink = MockNotificationSink()
+
+        project = RemoteProject(
+            id=1,
+            web_url="mock_web_url",
+            clone_url="mock_clone_url",
+            name_with_namespace="group/project",
+            default_branch="main",
+        )
+        project.path = Path("/mock/path/manual-changes")
+        git_client = MockGitClient(repo_path=project.path)
+        mock_git_platform = MockGitPlatform(
+            config=PlatformConfig(type="mock"),
+            projects=[project],
+            open_merge_request_url="http://example.com/mr",
+        )
+
+        branch_name = global_config.general.git.branch_name
+        git_client.remote_branches.add(branch_name)
+        git_client.commit_authors_between = [
+            GitCommitAuthor(name="Jane Doe", email="jane@example.com"),
+        ]
+
+        self.mock_env_manager.set("CI_JOB_URL", "http://example.com/logs")
+        summary_result = process_remote_project(
+            project=project,
+            package_managers=[],
+            git_platform=mock_git_platform,
+            notification_sinks=[notification_sink],
+            global_config=global_config,
+            git_client=git_client,
+            ctx=self.mock_ctx,
+        )
+
+        self.assertEqual(len(notification_sink.project_skipped_notifications), 1)
+        _, reason, logfile_url = notification_sink.project_skipped_notifications[0]
+        self.assertIn("Aborted processing project", reason)
+        self.assertEqual(logfile_url, "http://example.com/logs")
+        self.assertEqual(notification_sink.merge_request_notifications, [])
+
+        self.assertEqual(summary_result.status_report, StatusReport.MANUAL_CHANGES.value)
+        self.assertEqual(summary_result.severity_score, "unknown")
+        self.assertEqual(summary_result.mr_url, "http://example.com/mr")
+        self.assertEqual(git_client.reset_calls, [])
+        self.assertEqual(git_client.push_calls_with_force, [])
+
+    def test_process_project_resets_branch_when_only_splat_commits(
+        self,
+    ) -> None:
+        global_config = Config()
+        global_config.general.debug.skip_cleanup = True
+        notification_sink = MockNotificationSink()
+        yarn_manager = YarnPackageManager(global_config.package_managers.yarn, self.mock_ctx)
+
+        project = RemoteProject(
+            id=1,
+            web_url="mock_web_url",
+            clone_url="mock_clone_url",
+            name_with_namespace="group/project",
+            default_branch="main",
+        )
+        project.path = Path("/mock/path/splat-only")
+        lockfile = Lockfile(path=Path("/mock/path/splat-only/yarn.lock"), relative_path=Path("/yarn.lock"))
+        self.mock_fs.write(str(lockfile.path), "")
+
+        git_client = MockGitClient(repo_path=project.path)
+        mock_git_platform = MockGitPlatform(config=PlatformConfig(type="mock"), projects=[project])
+
+        with open("tests/utils/mock_audit_output.json") as file:
+            first_audit_output = json.load(file)
+        with open("tests/utils/mock_re_audit_output.json") as file:
+            re_audit_output = json.load(file)
+
+        mock_first_audit_output = "\n".join(json.dumps(row) for row in first_audit_output)
+        mock_re_audit_output = "\n".join(json.dumps(row) for row in re_audit_output)
+
+        self.mock_command_runner.set_response(
+            cmd="/usr/bin/yarn",
+            args=["audit", "--json"],
+            response=[
+                CommandResult(exit_code=0, stdout=mock_first_audit_output, stderr=""),
+                CommandResult(exit_code=0, stdout=mock_re_audit_output, stderr=""),
+            ],
+        )
+        self.mock_command_runner.set_response(
+            cmd="/usr/bin/yarn",
+            args=["upgrade", "package2@3.0.0"],
+            response=CommandResult(exit_code=1, stdout="", stderr="error"),
+        )
+
+        branch_name = global_config.general.git.branch_name
+        git_client.remote_branches.add(branch_name)
+        git_client.commit_authors_between = [
+            GitCommitAuthor(name="splat-bot", email="splatuser-bot@myorg.com"),
+        ]
+
+        summary_result = process_remote_project(
+            project=project,
+            package_managers=[yarn_manager],
+            git_platform=mock_git_platform,
+            notification_sinks=[notification_sink],
+            global_config=global_config,
+            git_client=git_client,
+            ctx=self.mock_ctx,
+        )
+
+        self.assertEqual(git_client.reset_calls, [(branch_name, project.default_branch)])
+        self.assertEqual(git_client.push_calls_with_force, [(branch_name, True)])
+        self.assertEqual(notification_sink.project_skipped_notifications, [])
+
+        self.assertEqual(len(git_client.commit_calls), 1)
+        self.assertEqual(len(notification_sink.merge_request_notifications), 1)
+
+        self.assertEqual(summary_result.status_report, StatusReport.ERROR.value)
+        self.assertEqual(summary_result.severity_score, "high")
+        self.assertEqual(summary_result.mr_url, "url")
