@@ -33,6 +33,10 @@ class GithubRepositoryTopicsEntry(BaseModel, extra="allow"):
     names: list[str]
 
 
+class GitHubIssuesPatch(BaseModel, extra="allow"):
+    assignees: list[str] | None
+
+
 class GitHubConfig(PlatformConfig):
     domain: str
     access_token: str

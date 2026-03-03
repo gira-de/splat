@@ -13,7 +13,7 @@ from splat.source_control.gitlab.errors import (
     MergeRequestHandlerError,
     MergeRequestValidationError,
 )
-from splat.source_control.gitlab.model import GitLabMergeRequestEntry, GitLabUserEntry
+from splat.source_control.gitlab.model import GitLabMergeRequestEntry, GitLabMergeRequestPutEntry, GitLabUserEntry
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -179,13 +179,13 @@ class MergeRequestHandler:
                 f"for {project.name_with_namespace}: could not resolve GitLab user id"
             )
             return
-        payload: JSON = {"assignee_id": assignee_id}
+        payload = GitLabMergeRequestPutEntry(assignee_id=assignee_id).model_dump()
         self.logger.debug(f"Assigning user '{maintainer}' to MR #{mr_number} for {project.name_with_namespace}")
         try:
             self.api.put_json(endpoint, payload)
         except Exception as e:
             self.logger.warning(
-                f"Failed to assign user '{maintainer}' to MR #{mr_number} " f"for {project.name_with_namespace}: {e}"
+                f"Failed to assign user '{maintainer}' to MR #{mr_number} for {project.name_with_namespace}: {e}"
             )
             return
         self.logger.info(f"Assigned user '{maintainer}' to MR #{mr_number} for {project.name_with_namespace}")

@@ -9,7 +9,7 @@ from splat.interface.logger import LoggerInterface
 from splat.model import MergeRequest, RemoteProject
 from splat.source_control.github.api import GitHubAPI
 from splat.source_control.github.errors import GithubPullRequestError
-from splat.source_control.github.model import GithubPullRequestEntry
+from splat.source_control.github.model import GitHubIssuesPatch, GithubPullRequestEntry
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -38,7 +38,7 @@ class GithubPRHandler:
                 log_pydantic_validation_error(
                     error=e,
                     prefix_message=(
-                        "Validation Failed When fetching existing pull requests in " f"{project.name_with_namespace}"
+                        f"Validation Failed When fetching existing pull requests in {project.name_with_namespace}"
                     ),
                     unparsable_data=json.dumps(line),
                     logger=self.logger,
@@ -104,13 +104,13 @@ class GithubPRHandler:
         Assign maintainer to an existing pull request.
         """
         endpoint = f"/repos/{project.name_with_namespace}/issues/{pr_number}"  # treat like issues and not pulls
-        payload: JSON = {"assignees": [maintainer]}
+        payload = GitHubIssuesPatch(assignees=[maintainer]).model_dump()
         self.logger.debug(f"Assigning user '{maintainer}' to PR #{pr_number} for {project.name_with_namespace}")
         try:
             self.api.patch_request(endpoint, payload)
         except Exception as e:
             self.logger.warning(
-                f"Failed to assign user '{maintainer}' to PR #{pr_number} " f"for {project.name_with_namespace}: {e}"
+                f"Failed to assign user '{maintainer}' to PR #{pr_number} for {project.name_with_namespace}: {e}"
             )
             return
         self.logger.info(f"Assigned user '{maintainer}' to PR #{pr_number} for {project.name_with_namespace}")

@@ -42,6 +42,10 @@ class GitLabPipelineBridge(BaseModel, extra="allow"):
     downstream_pipeline: GitLabDownstreamPipeline | None
 
 
+class GitLabMergeRequestPutEntry(BaseModel, extra="allow"):
+    assignee_id: int | None
+
+
 class GitLabPipelineJob(BaseModel, extra="allow"):
     id: str | int
     name: str
