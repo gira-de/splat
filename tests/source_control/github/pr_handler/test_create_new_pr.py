@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from requests import HTTPError, Response
 
 from splat.model import MergeRequest
@@ -44,7 +46,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         # Setup a failed response
         response = Response()
         response.status_code = 500
-        response._content = b"Internal Server Error"
+        response.raw = BytesIO(b"Internal Server Error")
         self.mock_api._post_request_error = HTTPError(response=response)
 
         pr_title = "Splat Dependency Updates"

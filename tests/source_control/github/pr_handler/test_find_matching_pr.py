@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from requests import HTTPError, Response
 
 from splat.interface.APIClient import JSON
@@ -61,7 +63,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
     def test_find_matching_pr_raises_exception_on_api_failure(self) -> None:
         response = Response()
         response.status_code = 500
-        response._content = b"Internal Server Error"
+        response.raw = BytesIO(b"Internal Server Error")
         self.mock_api._get_request_error = HTTPError(response=response)
 
         with self.assertRaises(Exception):

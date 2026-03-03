@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from requests import HTTPError, Response
 
 from splat.source_control.github.model import (
@@ -48,7 +50,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
     def test_update_existing_pr_raises_exception_on_failure(self) -> None:
         response = Response()
         response.status_code = 500
-        response._content = b"Internal Server Error"
+        response.raw = BytesIO(b"Internal Server Error")
         self.mock_api._patch_request_error = HTTPError(response=response)
 
         matching_pr = GithubPullRequestEntry(

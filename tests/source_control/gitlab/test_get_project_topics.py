@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from requests import HTTPError, Response
 
 from splat.source_control.gitlab.GitlabPlatform import GitlabPlatform
@@ -20,7 +22,7 @@ class TestGitlabProjectTopics(BaseGitlabSourceControlTest):
     def test_get_project_topics_returns_empty_list_when_api_errors(self) -> None:
         response = Response()
         response.status_code = 500
-        response._content = b"Internal Server Error"
+        response.raw = BytesIO(b"Internal Server Error")
         fake_api = MockGitLabAPI(self.base_url, get_json_error=HTTPError(response=response))
         platform = GitlabPlatform(self.config, self.fake_logger, self.fake_env_manager, fake_api)
 

@@ -1,4 +1,5 @@
 import unittest
+from io import BytesIO
 
 from requests import HTTPError, Response
 
@@ -155,7 +156,7 @@ class TestGitlabMRHandler(BaseGitlabSourceControlTest):
     def test_assign_user_to_mr_logs_warning_on_assignment_http_error(self) -> None:
         response = Response()
         response.status_code = 403
-        response._content = b"Forbidden"
+        response.raw = BytesIO(b"Forbidden")
         fake_api = MockGitLabAPI(
             self.base_url,
             get_json_by_endpoint={"/users": [{"id": 42}]},

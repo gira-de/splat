@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from requests import HTTPError, Response
 
 from splat.model import MergeRequest
@@ -89,7 +91,7 @@ class TestCreateMergeRequest(BaseGithubSourceControlTest):
         self.setup_mock_requests_post()
         response = Response()
         response.status_code = 422
-        response._content = b"Validation Failed"
+        response.raw = BytesIO(b"Validation Failed")
         self.mock_api._patch_request_error = HTTPError(response=response)
 
         result = self.github_platform.create_or_update_merge_request(
