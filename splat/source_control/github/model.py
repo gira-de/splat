@@ -26,6 +26,15 @@ class GithubPullRequestEntry(BaseModel, extra="allow"):
     url: str
     html_url: str
     head: HeadGithubPullRequestEntry
+    number: int
+
+
+class GithubRepositoryTopicsEntry(BaseModel, extra="allow"):
+    names: list[str]
+
+
+class GitHubIssuesPatch(BaseModel, extra="allow"):
+    assignees: list[str] | None
 
 
 class GitHubConfig(PlatformConfig):

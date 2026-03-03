@@ -155,3 +155,39 @@ package_managers:
   * New repository entries provided in the local config will be added with the global ones.
 
 **Note:** For the `domain`, `access_token`, and all `webhook_url` fields, you can set these values either directly as strings or as the names of environment variables. If using environment variables, wrap the names in `${}`. For example: `domain: ${GITLAB_DOMAIN}`.
+
+
+## Maintainer Auto-Assignment via Repository Topics
+
+Splat can automatically assign Splat-created merge/pull requests (MR/PRs) to a responsible person based on repository topics.
+
+### How It Works
+
+When Splat creates or updates an MR/PR, it reads repository topics and resolves an assignee username.
+
+Precedence:
+
+1. If topic `splat-maintainer:<username1>` or `splat-maintainer-<username1>` exists: assign `<username1>`
+2. Else if topic `maintainer:<username2>` or `maintainer-<username2>` exists: assign `<username2>`
+3. Else: leave MR/PR unassigned
+
+If the configured user cannot be assigned (for example due to missing access/permissions), Splat leaves the MR/PR unassigned and logs a warning.
+
+### GitHub Topic Constraints
+
+- Use the platform username (without `@`).
+- GitHub repository topics must be lowercase, must start with a lowercase letter or number, can include hyphens, and are limited to 50 characters.
+- Length guidance:
+  - Use `splat-maintainer-<username>` only if `<username>` is 34 characters or fewer.
+  - If `<username>` is longer, use `maintainer-<username>` (shorter prefix).
+
+### Examples
+
+- GitHub: `splat-maintainer-octocat`
+- GitHub (very long username): `maintainer-verylonggithubusername...`
+- GitLab: `splat-maintainer:john_doe`
+
+### Setting Repository Topics
+
+- GitHub (UI): Repo page → About panel → gear icon → Topics → add the topic. [Docs](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics)
+- GitLab (UI): Project → Settings → General → Topics → add the topic. [Docs](https://docs.gitlab.com/user/project/project_topics/)

@@ -8,7 +8,7 @@ from splat.interface.logger import LoggerInterface
 from splat.model import RemoteProject
 from splat.source_control.gitlab.api import GitLabAPI
 from splat.source_control.gitlab.errors import GitlabProjectFetchError
-from splat.source_control.gitlab.model import GitLabRepositoryEntry
+from splat.source_control.gitlab.model import GitLabProjectTopicsEntry, GitLabRepositoryEntry
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -78,3 +78,23 @@ class GitlabProjectHandler:
         if not projects:
             self.logger.info("No projects found.")
         return projects
+
+    def fetch_project_topics(self, project: RemoteProject, timeout: float = 10.0) -> list[str]:
+        endpoint = f"/projects/{project.id}"
+        try:
+            data = self.api.get_json(endpoint)
+        except requests.HTTPError as e:
+            # best-effort: treat errors as "no topics"
+            self.logger.error(f"failed to fetch topics for {project.name_with_namespace}: {e}")
+            return []
+        try:
+            topics_response = GitLabProjectTopicsEntry.model_validate(data)
+        except ValidationError as e:
+            log_pydantic_validation_error(
+                error=e,
+                prefix_message=f"Validation failed while fetching topics for {project.name_with_namespace}",
+                unparsable_data=cast(dict[str, JSON], data) if isinstance(data, dict) else None,
+                logger=self.logger,
+            )
+            return []
+        return [topic for topic in topics_response.topics]

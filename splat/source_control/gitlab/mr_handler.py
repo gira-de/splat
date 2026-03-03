@@ -1,7 +1,7 @@
 import json
 from typing import cast
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from splat.interface.APIClient import JSON
 from splat.interface.logger import LoggerInterface
@@ -13,7 +13,7 @@ from splat.source_control.gitlab.errors import (
     MergeRequestHandlerError,
     MergeRequestValidationError,
 )
-from splat.source_control.gitlab.model import GitLabMergeRequestEntry
+from splat.source_control.gitlab.model import GitLabMergeRequestEntry, GitLabMergeRequestPutEntry, GitLabUserEntry
 from splat.utils.logging_utils import log_pydantic_validation_error
 
 
@@ -93,6 +93,7 @@ class MergeRequestHandler:
             project_url=project.web_url,
             project_name=project.name_with_namespace,
             operation="Merge Request updated on GitLab",
+            number=gitlab_mr.iid,
         )
 
     def create_new_merge_request(
@@ -142,4 +143,49 @@ class MergeRequestHandler:
             project_url=project.web_url,
             project_name=project.name_with_namespace,
             operation="Merge Request Created on GitLab",
+            number=gitlab_new_mr.iid,
         )
+
+    def _get_user_id_by_username(self, username: str) -> int | None:
+        endpoint = "/users"
+        params = {"username": username}
+        try:
+            data = self.api.get_json(endpoint, params)
+        except Exception as e:
+            self.logger.warning(f"Failed to find user '{username}' on GitLab: {e}")
+            return None
+        try:
+            users = TypeAdapter(list[GitLabUserEntry]).validate_python(data)
+        except ValidationError as e:
+            log_pydantic_validation_error(
+                error=e,
+                prefix_message=f"Validation failed while fetching GitLab user '{username}'",
+                unparsable_data=json.dumps(data),
+                logger=self.logger,
+            )
+            return None
+        if len(users) == 0:
+            self.logger.warning(f"GitLab user '{username}' was not found for assignment")
+            return None
+        user_id = users[0].id
+        return user_id
+
+    def assign_user_to_mr(self, maintainer: str, project: RemoteProject, mr_number: int) -> None:
+        endpoint = f"/projects/{project.id}/merge_requests/{mr_number}"
+        assignee_id = self._get_user_id_by_username(maintainer.strip())
+        if assignee_id is None:
+            self.logger.warning(
+                f"Failed to assign user '{maintainer}' to MR #{mr_number} "
+                f"for {project.name_with_namespace}: could not resolve GitLab user id"
+            )
+            return
+        payload = GitLabMergeRequestPutEntry(assignee_id=assignee_id).model_dump()
+        self.logger.debug(f"Assigning user '{maintainer}' to MR #{mr_number} for {project.name_with_namespace}")
+        try:
+            self.api.put_json(endpoint, payload)
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to assign user '{maintainer}' to MR #{mr_number} for {project.name_with_namespace}: {e}"
+            )
+            return
+        self.logger.info(f"Assigned user '{maintainer}' to MR #{mr_number} for {project.name_with_namespace}")

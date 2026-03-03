@@ -32,6 +32,7 @@ class BaseGithubSourceControlTest(BaseSourceControlTest):
 
     def setup_mock_requests_post(self) -> None:
         self.mock_api._post_request_response = {
+            "number": 1,
             "title": "Splat Dependency Updates",
             "body": "Some body",
             "html_url": "http://github.com/pull/1",
@@ -41,6 +42,7 @@ class BaseGithubSourceControlTest(BaseSourceControlTest):
 
     def setup_mock_requests_patch(self) -> None:
         self.mock_api._patch_request_response = {
+            "number": 1,
             "title": "Splat Dependency Updates",
             "body": "Some updated body",
             "html_url": "http://github.com/pull/1",

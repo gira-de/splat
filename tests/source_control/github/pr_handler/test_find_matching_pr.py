@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from requests import HTTPError, Response
 
 from splat.interface.APIClient import JSON
@@ -11,6 +13,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
     def test_find_matching_pr_returns_correct_pr_on_successful_match(self) -> None:
         pr_list: list[JSON] = [
             {
+                "number": 1,
                 "title": "Splat Dependency Updates",
                 "body": "Some body",
                 "url": "some url",
@@ -18,6 +21,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
                 "head": {"ref": self.branch_name, "repo": {"html_url": "url repo"}},
             },
             {
+                "number": 2,
                 "title": "some feature pull request",
                 "body": "some body",
                 "url": "some url",
@@ -31,6 +35,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
         self.assertIsNotNone(matching_pr)
         if matching_pr:
             self.assertEqual(matching_pr.title, "Splat Dependency Updates")
+            self.assertEqual(matching_pr.number, 1)
 
         self.assertTrue(
             self.mock_logger.has_logged(
@@ -41,6 +46,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
     def test_find_matching_pr_returns_none_when_no_matching_pr_found(self) -> None:
         pr_list: list[JSON] = [
             {
+                "number": 2,
                 "title": "some feature pull request",
                 "body": "some body",
                 "url": "some url",
@@ -57,7 +63,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
     def test_find_matching_pr_raises_exception_on_api_failure(self) -> None:
         response = Response()
         response.status_code = 500
-        response._content = b"Internal Server Error"
+        response.raw = BytesIO(b"Internal Server Error")
         self.mock_api._get_request_error = HTTPError(response=response)
 
         with self.assertRaises(Exception):
@@ -66,6 +72,7 @@ class TestFindMatchingPr(BaseGithubSourceControlTest):
     def test_find_matching_pr_logs_error_on_json_validation_failure(self) -> None:
         invalid_pr_list: list[JSON] = [
             {
+                "number": 2,
                 "title": "Splat Dependency Updates",
                 "url": "some url",
                 "html_url": "http://github.com/pull/2",
