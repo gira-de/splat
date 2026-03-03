@@ -9,7 +9,7 @@ class TestGitlabProjectTopics(BaseGitlabSourceControlTest):
     def test_get_project_topics_returns_topics_when_api_returns_topic_list(self) -> None:
         fake_api = MockGitLabAPI(
             self.base_url,
-            get_json_by_endpoint={f"/projects/{self.project.id}": {"topics": ["backend", " security "]}},
+            get_json_by_endpoint={f"/projects/{self.project.id}": {"topics": ["backend", "security"]}},
         )
         platform = GitlabPlatform(self.config, self.fake_logger, self.fake_env_manager, fake_api)
 

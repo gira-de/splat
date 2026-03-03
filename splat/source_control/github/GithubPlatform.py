@@ -199,4 +199,4 @@ class GithubPlatform(GitPlatformInterface):
                 logger=self.logger,
             )
             return []
-        return [topic.strip() for topic in topics_response.names]
+        return [topic for topic in topics_response.names]

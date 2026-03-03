@@ -97,4 +97,4 @@ class GitlabProjectHandler:
                 logger=self.logger,
             )
             return []
-        return [topic.strip() for topic in topics_response.topics]
+        return [topic for topic in topics_response.topics]
