@@ -31,6 +31,7 @@ class RemoteProject(Project):
     web_url: str
     clone_url: str
     default_branch: str
+    display_name: str | None = None
 
 
 @dataclass

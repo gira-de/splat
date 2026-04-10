@@ -5,6 +5,7 @@ from splat.config.model import PlatformConfig
 
 class GithubRepositoryEntry(BaseModel, extra="allow"):
     id: int
+    name: str
     full_name: str
     clone_url: str
     html_url: str

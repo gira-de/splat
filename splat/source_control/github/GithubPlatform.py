@@ -94,6 +94,7 @@ class GithubPlatform(GitPlatformInterface):
             clone_url=proj.clone_url,
             web_url=proj.html_url,
             default_branch=proj.default_branch,
+            display_name=proj.name,
         )
 
     def fetch_projects(self, project_id: str | None = None, timeout: float = 60) -> list[RemoteProject]:

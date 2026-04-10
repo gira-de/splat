@@ -10,6 +10,7 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
             [  # First page
                 {
                     "id": 123,
+                    "name": "project1",
                     "full_name": "group/project1",
                     "clone_url": "https://github.com/octocat/project1.git",
                     "html_url": "https://github.com/octocat/project1",
@@ -17,6 +18,7 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
                 },
                 {
                     "id": 456,
+                    "name": "project2",
                     "full_name": "group/project2",
                     "clone_url": "https://github.com/octocat/project2.git",
                     "html_url": "https://github.com/octocat/project2",
@@ -33,6 +35,7 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
                 clone_url="https://github.com/octocat/project1.git",
                 web_url="https://github.com/octocat/project1",
                 default_branch="master",
+                display_name="project1",
             ),
             RemoteProject(
                 id=456,
@@ -40,6 +43,7 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
                 clone_url="https://github.com/octocat/project2.git",
                 web_url="https://github.com/octocat/project2",
                 default_branch="master",
+                display_name="project2",
             ),
         ]
 
@@ -56,6 +60,7 @@ class TestGithubFetchProjects(BaseGithubSourceControlTest):
         expected_pydantic_logs = [
             "Validation failed for GitHub project 'N/A': "
             "Field 'id' - Field required; "
+            "Field 'name' - Field required; "
             "Field 'full_name' - Field required; "
             "Field 'clone_url' - Field required; "
             "Field 'html_url' - Field required; "

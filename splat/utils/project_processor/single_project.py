@@ -100,7 +100,7 @@ def clone_and_process_project(
         except Exception:
             maintainer = None
         return ProjectSummary(
-            project_name=project.name_with_namespace,
+            project_name=project.display_name or project.name_with_namespace,
             time_stamp=time_stamp,
             project_url=project.web_url,
             status_report=StatusReport.ERROR.value,
@@ -154,7 +154,7 @@ def process_remote_project(
     def _build_summary(mr_result: MergeRequestResult, severity: Severity | None) -> ProjectSummary:
         time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
         return ProjectSummary(
-            project_name=project.name_with_namespace,
+            project_name=project.display_name or project.name_with_namespace,
             time_stamp=time_stamp,
             project_url=project.web_url,
             status_report=mr_result.status.value if mr_result.status else None,
