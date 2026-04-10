@@ -30,11 +30,11 @@ class GithubPlatform(GitPlatformInterface):
         self._config = config
         self.logger = logger
         self.env_manager = env_manager
-        self.domain = self.env_manager.resolve_value(config.domain)
+        self._domain = self.env_manager.resolve_value(config.domain)
         self._access_token = self.env_manager.resolve_value(config.access_token)
         self._name = config.name
         self.filters = config.filters
-        self.api = api or GitHubAPI(self.domain, self._access_token, self.logger)
+        self.api = api or GitHubAPI(self._domain, self._access_token, self.logger)
         self.description_generator = DescriptionGenerator()
         self.pr_handler = GithubPRHandler(self.api, self.logger)
 
@@ -53,6 +53,10 @@ class GithubPlatform(GitPlatformInterface):
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def domain(self) -> str:
+        return self._domain
 
     @property
     def merge_request_type(self) -> str:
@@ -161,10 +165,9 @@ class GithubPlatform(GitPlatformInterface):
             else:
                 pr = self.pr_handler.create_new_pr(title, new_pr_description, branch_name, project, draft, timeout)
 
-            project_topics = self.get_project_topics(project)
-            maintainer = find_project_maintainer(project.name_with_namespace, project_topics, self.logger)
-            if maintainer:
-                self.pr_handler.assign_user_to_pr(maintainer, project, pr.number)
+            maintainer = self.get_maintainer(project)
+            if maintainer and self.pr_handler.assign_user_to_pr(maintainer, project, pr.number):
+                pr.assignee = maintainer
 
             return pr
         except ValidationError as e:
@@ -200,3 +203,7 @@ class GithubPlatform(GitPlatformInterface):
             )
             return []
         return [topic for topic in topics_response.names]
+
+    def get_maintainer(self, project: RemoteProject) -> str | None:
+        topics = self.get_project_topics(project)
+        return find_project_maintainer(project.name_with_namespace, topics, self.logger)

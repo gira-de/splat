@@ -22,11 +22,11 @@ class GitlabPlatform(GitPlatformInterface):
         self._config = config
         self.logger = logger
         self.env_manager = env_manager
-        self.domain = self.env_manager.resolve_value(config.domain)
+        self._domain = self.env_manager.resolve_value(config.domain)
         self._access_token = self.env_manager.resolve_value(config.access_token)
         self._name = config.name
         self.filters = config.filters
-        self.api = api or GitLabAPI(self.domain, self._access_token)
+        self.api = api or GitLabAPI(self._domain, self._access_token)
         self.project_handler = GitlabProjectHandler(self.api, self.logger)
         self.mr_handler = MergeRequestHandler(self.api, self.logger)
 
@@ -45,6 +45,10 @@ class GitlabPlatform(GitPlatformInterface):
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def domain(self) -> str:
+        return self._domain
 
     @property
     def merge_request_type(self) -> str:
@@ -85,8 +89,7 @@ class GitlabPlatform(GitPlatformInterface):
         title: str = "Splat Dependency Updates",
     ) -> MergeRequest:
         mr_title = self.mr_handler.build_merge_request_title(remaining_vulns, title)
-        project_topics = self.get_project_topics(project)
-        maintainer = find_project_maintainer(project.name_with_namespace, project_topics, self.logger)
+        maintainer = self.get_maintainer(project)
         try:
             open_mr = self.mr_handler.get_open_merge_request(project, branch_name)
             if open_mr:
@@ -99,6 +102,7 @@ class GitlabPlatform(GitPlatformInterface):
                 )
             if maintainer:
                 self.mr_handler.assign_user_to_mr(maintainer, project, mr.number)
+                mr.assignee = maintainer
             return mr
         except MergeRequestHandlerError as e:
             error_msg = f"Failed to create or update merge request for {project.name_with_namespace}: {e}"
@@ -107,3 +111,7 @@ class GitlabPlatform(GitPlatformInterface):
 
     def get_project_topics(self, project: RemoteProject) -> list[str]:
         return self.project_handler.fetch_project_topics(project, timeout=10.0)
+
+    def get_maintainer(self, project: RemoteProject) -> str | None:
+        topics = self.get_project_topics(project)
+        return find_project_maintainer(project.name_with_namespace, topics, self.logger)

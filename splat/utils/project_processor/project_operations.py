@@ -5,7 +5,7 @@ from pathlib import Path
 from splat.git.interface import GitClientInterface
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.logger import LoggerInterface
-from splat.model import ProjectAuditFixResult, ProjectSummary, RemoteProject, StatusReport
+from splat.model import MergeRequestResult, ProjectAuditFixResult, ProjectSummary, RemoteProject, StatusReport
 from splat.utils.env_manager.interface import EnvManager
 from splat.utils.fs import FileSystemInterface
 from splat.utils.project_processor.project_notifier import ProjectNotifier
@@ -51,7 +51,7 @@ def handle_commits(
     git_platform: GitPlatformInterface,
     git_client: GitClientInterface,
     logger: LoggerInterface,
-) -> tuple[StatusReport, str | None]:
+) -> MergeRequestResult:
     """Handle the commit actions for remote projects."""
 
     commits = project_result.commit_messages
@@ -60,7 +60,7 @@ def handle_commits(
 
     if not commits and not remaining_vulns:
         logger.info("No vulnerabilities fixed and no remaining vulnerabilities, not pushing any changes")
-        return project_status, None
+        return MergeRequestResult(project_status, None, None)
 
     git_client.push(branch_name, force=True)
 
@@ -71,7 +71,7 @@ def handle_commits(
     except Exception as e:
         context = f"{git_platform.merge_request_type} Request Creation or Update on {git_platform.type}"
         notifier.notify_failure(context, e)
-        return StatusReport.ERROR, None
+        return MergeRequestResult(StatusReport.ERROR, None, None)
 
     if project_status == StatusReport.ERROR:
         final_status = StatusReport.ERROR
@@ -80,4 +80,4 @@ def handle_commits(
     else:
         final_status = StatusReport.MR_PENDING
 
-    return final_status, mr_result.url
+    return MergeRequestResult(final_status, mr_result.url, mr_result.assignee)
