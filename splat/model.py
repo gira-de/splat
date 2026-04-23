@@ -31,6 +31,7 @@ class RemoteProject(Project):
     web_url: str
     clone_url: str
     default_branch: str
+    display_name: str | None = None
 
 
 @dataclass
@@ -62,6 +63,12 @@ class StatusReport(Enum):
     MANUAL_CHANGES = "manual_changes"  # NON_SPLAT_COMMITS
 
 
+class MergeRequestResult(NamedTuple):
+    status: StatusReport
+    mr_url: str | None
+    assignee: str | None
+
+
 @dataclass
 class ProjectSummary:
     project_name: str
@@ -71,6 +78,8 @@ class ProjectSummary:
     severity_score: str | None
     mr_url: str | None
     logfile_url: str | None
+    maintainer: str | None
+    platform_url: str | None
 
 
 class Lockfile(NamedTuple):
@@ -110,10 +119,12 @@ class AuditReport:
     fix_skip_reason: str | None = field(default=None)
 
 
-class MergeRequest(NamedTuple):
+@dataclass
+class MergeRequest:
     title: str
     url: str
     project_url: str
     project_name: str
     operation: str
     number: int
+    assignee: str | None

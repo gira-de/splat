@@ -118,6 +118,8 @@ class TestProcessProjectIntegration(unittest.TestCase):
             severity_score="high",
             mr_url="url",
             logfile_url=None,
+            maintainer=None,
+            platform_url="https://mock.example.com",
         )
 
         # Call the function under test
@@ -169,7 +171,9 @@ class TestProcessProjectIntegration(unittest.TestCase):
         merge_request, commit_messages, remaining_vulns = mock_notification_sink.merge_request_notifications[0]
         self.assertEqual(
             merge_request,
-            MergeRequest("Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock", 1),
+            MergeRequest(
+                "Splat Dependency Updates", "url", "project_url", "project_name", "pull_mock", 1, assignee=None
+            ),
         )
         self.assertEqual(commit_messages, [commit_message])
         self.assertEqual(remaining_vulns, expected_remaining_vulns)

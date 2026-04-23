@@ -42,6 +42,12 @@ class GitPlatformInterface(ABC):
         """The value of environment variable of the access token"""
         pass
 
+    @property
+    @abstractmethod
+    def domain(self) -> str:
+        """Base URL of the platform instance, e.g. https://github.com"""
+        pass
+
     @classmethod
     @abstractmethod
     def from_platform_config(
@@ -71,4 +77,9 @@ class GitPlatformInterface(ABC):
 
     @abstractmethod
     def get_project_topics(self, project: RemoteProject) -> list[str]:
+        pass
+
+    @abstractmethod
+    def get_maintainer(self, project: RemoteProject) -> str | None:
+        """Return the maintainer username for the project, or None if not found."""
         pass

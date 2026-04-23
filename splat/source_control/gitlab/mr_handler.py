@@ -94,6 +94,7 @@ class MergeRequestHandler:
             project_name=project.name_with_namespace,
             operation="Merge Request updated on GitLab",
             number=gitlab_mr.iid,
+            assignee=None,
         )
 
     def create_new_merge_request(
@@ -144,6 +145,7 @@ class MergeRequestHandler:
             project_name=project.name_with_namespace,
             operation="Merge Request Created on GitLab",
             number=gitlab_new_mr.iid,
+            assignee=None,
         )
 
     def _get_user_id_by_username(self, username: str) -> int | None:

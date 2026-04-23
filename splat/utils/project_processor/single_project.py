@@ -12,7 +12,15 @@ from splat.git.utils import is_splat_author
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.NotificationSinksInterface import NotificationSinksInterface
 from splat.interface.PackageManagerInterface import PackageManagerInterface
-from splat.model import LocalProject, ProjectSummary, RemoteProject, RuntimeContext, Severity, StatusReport
+from splat.model import (
+    LocalProject,
+    MergeRequestResult,
+    ProjectSummary,
+    RemoteProject,
+    RuntimeContext,
+    Severity,
+    StatusReport,
+)
 from splat.utils.plugin_initializer.package_managers_init import initialize_package_managers
 from splat.utils.project_processor.audit_fixer import audit_and_fix_project
 from splat.utils.project_processor.project_notifier import ProjectNotifier
@@ -87,14 +95,20 @@ def clone_and_process_project(
         logger.error(f"An Error Occured while processing Project {project.name_with_namespace} : {e}")
         time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
         log_file_url = get_logfile_url(ctx.env_manager)
+        try:
+            maintainer = git_platform.get_maintainer(project)
+        except Exception:
+            maintainer = None
         return ProjectSummary(
-            project_name=project.name_with_namespace,
+            project_name=project.display_name or project.name_with_namespace,
             time_stamp=time_stamp,
             project_url=project.web_url,
             status_report=StatusReport.ERROR.value,
             severity_score=None,
             mr_url=None,
             logfile_url=log_file_url,
+            maintainer=maintainer,
+            platform_url=git_platform.domain,
         )
 
 
@@ -125,24 +139,30 @@ def process_remote_project(
     branch_name = merged_config.general.git.branch_name
     default_branch = project.default_branch
     severity_score = Severity.UNKNOWN
-    mr_url = None
+    mr_result = MergeRequestResult(StatusReport.ERROR, None, None)
     logfile_url = get_logfile_url(ctx.env_manager)
+    try:
+        topics_maintainer = git_platform.get_maintainer(project)
+    except Exception:
+        topics_maintainer = None
 
     def _remove_project_dir() -> None:
         if not merged_config.general.debug.skip_cleanup:
             logger.debug(f"Removing {project.path}")
             shutil.rmtree(project.path)
 
-    def _build_summary(status: StatusReport | None, severity: Severity | None, mr: str | None) -> ProjectSummary:
+    def _build_summary(mr_result: MergeRequestResult, severity: Severity | None) -> ProjectSummary:
         time_stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%dT%H:%M:%SZ")
         return ProjectSummary(
-            project_name=project.name_with_namespace,
+            project_name=project.display_name or project.name_with_namespace,
             time_stamp=time_stamp,
             project_url=project.web_url,
-            status_report=status.value if status else None,
+            status_report=mr_result.status.value if mr_result.status else None,
             severity_score=severity.name.lower() if severity else None,
-            mr_url=mr,
+            mr_url=mr_result.mr_url,
             logfile_url=logfile_url,
+            maintainer=mr_result.assignee or topics_maintainer,
+            platform_url=git_platform.domain,
         )
 
     branch_exists_remote = git_client.branch_exists_remote(branch_name)
@@ -165,7 +185,8 @@ def process_remote_project(
             logger.info(msg)
             _remove_project_dir()
             notifier.notify_project_skipped(msg, logfile_url)
-            return _build_summary(StatusReport.MANUAL_CHANGES, severity_score, open_mr_url)
+            mr_result = MergeRequestResult(StatusReport.MANUAL_CHANGES, open_mr_url, topics_maintainer)
+            return _build_summary(mr_result, severity_score)
         # Only splat commits (or no commits) on the branch
         git_client.reset_branch_to_ref(branch_name, default_branch)
     try:
@@ -173,13 +194,10 @@ def process_remote_project(
             project, package_managers, merged_config, git_client, logger, notifier.notify_failure
         )
         severity_score = audit_fix_result.severity_score
-        status_report, mr_url = handle_commits(
-            project, audit_fix_result, branch_name, notifier, git_platform, git_client, logger
-        )
+        mr_result = handle_commits(project, audit_fix_result, branch_name, notifier, git_platform, git_client, logger)
 
     except Exception as e:
-        status_report = StatusReport.ERROR
         logger.error(f"Error processing remote project '{project.name_with_namespace}': {str(e)}")
 
     _remove_project_dir()
-    return _build_summary(status_report, severity_score, mr_url)
+    return _build_summary(mr_result, severity_score)

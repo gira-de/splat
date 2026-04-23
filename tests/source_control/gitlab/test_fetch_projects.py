@@ -16,6 +16,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
         project1: JSON = {
             "id": 1,
             "path_with_namespace": "group/project1",
+            "name": "Project1",
             "http_url_to_repo": "http://gitlab.com/project1.git",
             "web_url": "http://gitlab.com/project1",
             "default_branch": "main",
@@ -23,6 +24,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
         project2: JSON = {
             "id": 2,
             "path_with_namespace": "group/project2",
+            "name": "Project2",
             "http_url_to_repo": "http://gitlab.com/project2.git",
             "web_url": "http://gitlab.com/project2",
             "default_branch": "main",
@@ -44,6 +46,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
                 clone_url="http://gitlab.com/project1.git",
                 web_url="http://gitlab.com/project1",
                 default_branch="main",
+                display_name="Project1",
             ),
             RemoteProject(
                 name_with_namespace="group/project2",
@@ -51,6 +54,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
                 clone_url="http://gitlab.com/project2.git",
                 web_url="http://gitlab.com/project2",
                 default_branch="main",
+                display_name="Project2",
             ),
         ]
         self.assertEqual(projects, expected_projects)
@@ -59,6 +63,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
         project_data: JSON = {
             "id": 3,
             "path_with_namespace": "group/project3",
+            "name": "Project3",
             "http_url_to_repo": "http://gitlab.com/project3.git",
             "web_url": "http://gitlab.com/project3",
             "default_branch": "develop",
@@ -74,6 +79,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
                 clone_url="http://gitlab.com/project3.git",
                 web_url="http://gitlab.com/project3",
                 default_branch="develop",
+                display_name="Project3",
             )
         ]
         self.assertEqual(projects, expected_projects)
@@ -88,6 +94,7 @@ class TestGitlabFetchProjects(BaseGitlabSourceControlTest):
         project_data: JSON = {
             "id": 5,
             "path_with_namespace": "group/project5",
+            "name": "Project5",
             "http_url_to_repo": "http://gitlab.com/project5.git",
             "web_url": "http://gitlab.com/project5",
             "default_branch": None,

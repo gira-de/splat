@@ -2,6 +2,7 @@ from splat.config.model import PlatformConfig
 from splat.interface.GitPlatformInterface import GitPlatformInterface
 from splat.interface.logger import LoggerInterface
 from splat.model import AuditReport, MergeRequest, RemoteProject
+from splat.source_control.common.maintainer_finder import find_project_maintainer
 from splat.utils.env_manager.interface import EnvManager
 from tests.mocks.mock_env_manager import MockEnvManager
 from tests.mocks.mock_logger import MockLogger
@@ -44,6 +45,10 @@ class MockGitPlatform(GitPlatformInterface):
         return "mock_name"
 
     @property
+    def domain(self) -> str:
+        return "https://mock.example.com"
+
+    @property
     def merge_request_type(self) -> str:
         return "pull_mock"
 
@@ -68,10 +73,16 @@ class MockGitPlatform(GitPlatformInterface):
         remaining_vulns: list[AuditReport],
         title: str = "Splat Dependency Updates",
     ) -> MergeRequest:
-        return MergeRequest(title, "url", "project_url", "project_name", self.merge_request_type, number=1)
+        return MergeRequest(
+            title, "url", "project_url", "project_name", self.merge_request_type, number=1, assignee=None
+        )
 
     def get_open_merge_request_url(self, project: RemoteProject, branch_name: str, timeout: int = 10) -> str | None:
         return self.open_merge_request_url
 
     def get_project_topics(self, project: RemoteProject) -> list[str]:
         return self.project_topics.get(project.name_with_namespace, [])
+
+    def get_maintainer(self, project: RemoteProject) -> str | None:
+        topics = self.get_project_topics(project)
+        return find_project_maintainer(project.name_with_namespace, topics, self.logger)

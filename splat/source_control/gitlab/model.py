@@ -11,6 +11,7 @@ class GitLabConfig(PlatformConfig):
 class GitLabRepositoryEntry(BaseModel, extra="allow"):
     id: int
     path_with_namespace: str
+    name: str
     http_url_to_repo: str
     web_url: str
     default_branch: str | None

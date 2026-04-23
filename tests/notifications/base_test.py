@@ -71,6 +71,7 @@ class BaseTestTeamsNotificationSink(unittest.TestCase):
             project_name="example-project",
             operation="Merge Request Created",
             number=1,
+            assignee=None,
         )
 
         self.commit_messages = [

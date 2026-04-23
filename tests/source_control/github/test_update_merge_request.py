@@ -30,6 +30,7 @@ class TestUpdateMergeRequest(BaseGithubSourceControlTest):
             project_name="group/repo",
             operation="Pull Request Updated on Github",
             number=1,
+            assignee=None,
         )
 
     def test_github_update_pull_request_with_commits_and_no_remaining_vulns(self) -> None:

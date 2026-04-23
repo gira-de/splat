@@ -35,7 +35,12 @@ class GitlabProjectHandler:
             )
             return None
         return RemoteProject(
-            proj.path_with_namespace, proj.id, proj.web_url, proj.http_url_to_repo, proj.default_branch
+            proj.path_with_namespace,
+            proj.id,
+            proj.web_url,
+            proj.http_url_to_repo,
+            proj.default_branch,
+            display_name=proj.name,
         )
 
     def fetch_project_with_id(self, project_id: str, timeout: float = 60) -> RemoteProject | None:
