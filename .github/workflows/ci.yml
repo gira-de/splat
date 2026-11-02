@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: |
           pip install --upgrade poetry
           poetry install
@@ -24,6 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: |
           pip install --upgrade poetry
           poetry install
@@ -33,6 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: |
           pip install --upgrade poetry
           poetry install
@@ -42,6 +51,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: |
           pip install --upgrade poetry
           poetry install
@@ -51,6 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: pip install --upgrade poetry pip-audit poetry-plugin-export
       - run: |
           poetry export --without-hashes -o requirements.txt
@@ -60,6 +75,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: |
           pip install --upgrade poetry
           poetry install
@@ -80,6 +98,9 @@ jobs:
       image_version: ${{ steps.build.outputs.image_version }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - id: build
         uses: ./.github/actions/build-and-push-image
         with:
@@ -92,6 +113,9 @@ jobs:
     needs: build_push_image
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Debug image_version
         run: echo "will test → ${{ needs.build_push_image.outputs.image_version }}"
